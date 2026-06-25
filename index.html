@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="語彙" />
+  <meta name="theme-color" content="#1A1A1A" />
+  <link rel="manifest" href="manifest.json" />
+  <title>語彙</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F7F6F3; --ink: #1A1A1A; --mid: #6B6966; --muted: #B0ADA6;
+      --line: #E8E6E1; --gold: #C8A96E; --card-bg: #FFFFFF; --card-back: #1A1A1A;
+      --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html, body { height: 100%; background: var(--bg); font-family: 'Inter', system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; overflow: hidden; }
+    #app { display: flex; flex-direction: column; height: 100%; max-width: 560px; margin: 0 auto; }
+    .header { padding: calc(var(--safe-top) + 18px) 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: var(--bg); }
+    .header-logo { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 300; }
+    .header-sub { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+    .nav { display: flex; border-bottom: 1px solid var(--line); padding: 0 20px; flex-shrink: 0; background: var(--bg); }
+    .nav-btn { background: none; border: none; cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 500; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 11px 14px 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .nav-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 20px calc(var(--safe-bottom) + 24px); }
+    /* filter */
+    .filter-row { display: flex; gap: 7px; padding: 14px 0 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .chip { flex-shrink: 0; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 500; letter-spacing: 0.6px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--mid); font-family: inherit; transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+    .chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    /* card */
+    .progress-bar { display: flex; gap: 3px; padding: 18px 0 14px; }
+    .progress-seg { flex: 1; height: 2px; border-radius: 1px; background: var(--line); }
+    .progress-seg.done { background: var(--ink); }
+    .progress-seg.current { background: var(--gold); }
+    .card-wrap { perspective: 1200px; cursor: pointer; user-select: none; -webkit-user-select: none; }
+    .card-inner { position: relative; width: 100%; height: 260px; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(.4,0,.2,1); }
+    .card-inner.flipped { transform: rotateY(180deg); }
+    .card-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 24px; }
+    .card-front { background: var(--card-bg); border: 1px solid var(--line); }
+    .card-back { background: var(--card-back); transform: rotateY(180deg); color: var(--bg); }
+    .card-type-label { position: absolute; top: 14px; left: 16px; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500; }
+    .card-jp { font-family: 'Noto Serif JP', serif; font-size: 58px; font-weight: 300; letter-spacing: -1px; line-height: 1; }
+    .card-reading { font-family: 'Noto Serif JP', serif; font-size: 15px; color: var(--gold); margin-top: 12px; letter-spacing: 2px; }
+    .card-meaning { font-size: 19px; font-weight: 400; text-align: center; line-height: 1.4; color: var(--bg); }
+    .flip-hint { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 16px; font-weight: 500; }
+    /* forms accordion */
+    .forms-panel { background: var(--card-bg); border: 1px solid var(--line); border-radius: 4px; margin-top: 10px; overflow: hidden; opacity: 0; transform: translateY(5px); transition: opacity .25s, transform .25s; pointer-events: none; }
+    .forms-panel.visible { opacity: 1; transform: none; pointer-events: auto; }
+    .forms-group-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--line); background: var(--bg); user-select: none; -webkit-user-select: none; }
+    .forms-group-header:last-child { border-bottom: none; }
+    .forms-group-title { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+    .forms-group-arrow { font-size: 10px; color: var(--muted); transition: transform .2s; }
+    .forms-group-arrow.open { transform: rotate(90deg); }
+    .forms-group-body { display: none; }
+    .forms-group-body.open { display: block; }
+    .form-row { display: flex; align-items: baseline; padding: 9px 14px; border-bottom: 1px solid var(--line); gap: 10px; }
+    .form-row:last-child { border-bottom: none; }
+    .form-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 500; width: 72px; flex-shrink: 0; line-height: 1.4; }
+    .form-value { font-family: 'Noto Serif JP', serif; font-size: 15px; color: var(--ink); }
+    /* grade */
+    .grade-row { display: flex; gap: 10px; margin-top: 14px; transition: opacity .2s; }
+    .grade-row.hidden { opacity: 0; pointer-events: none; }
+    .btn { flex: 1; border: none; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; letter-spacing: .06em; border-radius: 3px; padding: 12px; transition: all .15s; }
+    .btn-known { background: var(--ink); color: var(--bg); }
+    .btn-learning { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .btn-learning:hover { border-color: var(--ink); }
+    .btn-primary { background: var(--ink); color: var(--bg); border-radius: 3px; border: none; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; letter-spacing: .06em; padding: 12px 20px; transition: background .15s; }
+    .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; padding: 12px 20px; }
+    .session-counter { text-align: center; font-size: 11px; color: var(--muted); margin-top: 10px; }
+    /* done */
+    .done-screen { text-align: center; padding: 50px 0; }
+    .done-kanji { font-family: 'Noto Serif JP', serif; font-size: 52px; color: var(--gold); margin-bottom: 6px; }
+    .done-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+    .done-stats { display: flex; justify-content: center; margin-bottom: 40px; }
+    .done-stat { padding: 0 28px; }
+    .done-stat + .done-stat { border-left: 1px solid var(--line); }
+    .done-num { font-size: 38px; font-weight: 300; }
+    .done-stat-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    /* words list */
+    .section-header { padding: 18px 0 7px; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 500; display: flex; align-items: center; gap: 7px; }
+    .word-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+    .word-row:last-child { border-bottom: none; }
+    .word-jp { font-family: 'Noto Serif JP', serif; font-size: 17px; }
+    .word-kana { font-family: 'Noto Serif JP', serif; font-size: 11px; color: var(--muted); }
+    .word-meaning { font-size: 12px; color: var(--mid); margin-top: 1px; }
+    .word-has-forms { font-size: 9px; color: var(--gold); margin-top: 2px; letter-spacing: 0.5px; }
+    .recall-pill { margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #F0EDE6; color: var(--gold); }
+    .del-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--muted); padding: 4px 5px; flex-shrink: 0; transition: color .15s; }
+    .del-btn:hover { color: var(--ink); }
+    /* add form */
+    .add-form { padding: 18px 0; display: flex; flex-direction: column; gap: 16px; }
+    .field-label { display: block; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 7px; }
+    .field-input { width: 100%; padding: 10px 12px; background: var(--card-bg); border: 1px solid var(--line); border-radius: 3px; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; transition: border-color .15s; -webkit-appearance: none; }
+    .field-input:focus { border-color: var(--ink); }
+    .jp-input { font-family: 'Noto Serif JP', serif !important; font-size: 19px !important; }
+    .type-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+    .type-chip { padding: 6px 13px; border-radius: 20px; font-size: 10px; font-weight: 500; letter-spacing: 0.5px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--mid); font-family: inherit; transition: all .15s; }
+    .type-chip.selected { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    /* forms section in add */
+    .forms-section { border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+    .forms-section-title { padding: 10px 12px; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--bg); border-bottom: 1px solid var(--line); }
+    .forms-group-add { border-bottom: 1px solid var(--line); }
+    .forms-group-add:last-child { border-bottom: none; }
+    .forms-group-add-header { padding: 9px 12px; font-size: 10px; font-weight: 500; color: var(--mid); cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; -webkit-user-select: none; }
+    .forms-group-add-body { padding: 0 12px 10px; display: none; }
+    .forms-group-add-body.open { display: block; }
+    .form-input-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .form-input-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 500; width: 70px; flex-shrink: 0; }
+    .form-input-field { flex: 1; padding: 7px 10px; background: var(--card-bg); border: 1px solid var(--line); border-radius: 3px; font-family: 'Noto Serif JP', serif; font-size: 14px; color: var(--ink); outline: none; transition: border-color .15s; }
+    .form-input-field:focus { border-color: var(--ink); }
+    /* empty */
+    .empty { text-align: center; padding: 70px 0; }
+    .empty-char { font-family: 'Noto Serif JP', serif; font-size: 44px; color: var(--line); margin-bottom: 14px; }
+    .empty-text { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="header-logo">語彙</div>
+      <div class="header-sub" id="header-sub">0 words</div>
+    </div>
+    <button class="btn-primary" id="add-btn" style="font-size:10px;padding:8px 14px">+ Add Word</button>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" data-tab="review">Review</button>
+    <button class="nav-btn" data-tab="words">Words</button>
+    <button class="nav-btn" data-tab="add">Add</button>
+  </div>
+  <div class="scroll-area" id="main-content"></div>
+</div>
+
+<script>
+// ── SCHEMA ────────────────────────────────────────────────────────────
+const TYPE_COLORS = {
+  "verb-u":"#7C9EBF","verb-ru":"#5B8FA8","verb-irr":"#4A7A8A",
+  "i-adj":"#9B7EC8","na-adj":"#B07FC4","noun":"#8AAE8A","expression":"#C8A96E"
+};
+const TYPE_LABELS = {
+  "verb-u":"う-verb","verb-ru":"る-verb","verb-irr":"Irreg. verb",
+  "i-adj":"い-adjective","na-adj":"な-adjective","noun":"Noun","expression":"Expression"
+};
+const ALL_TYPES = Object.keys(TYPE_LABELS);
+
+// Form definitions — grouped for accordion display
+const VERB_FORM_GROUPS = [
+  { key:"basic", label:"Basic forms", forms:[
+    { key:"て形",   label:"て形",   note:"te-form" },
+    { key:"た形",   label:"た形",   note:"past" },
+    { key:"ない形", label:"ない形", note:"negative" },
+    { key:"ます形", label:"ます形", note:"polite" },
+  ]},
+  { key:"cond", label:"Conditional / hypothetical", forms:[
+    { key:"ば形",   label:"ば形",   note:"if (formal)" },
+    { key:"たら形", label:"たら形", note:"if / when" },
+  ]},
+  { key:"potential", label:"Potential & volitional", forms:[
+    { key:"可能形", label:"可能形", note:"can / able to" },
+    { key:"意向形", label:"意向形", note:"let's / I'll" },
+    { key:"命令形", label:"命令形", note:"imperative" },
+    { key:"禁止形", label:"禁止形", note:"prohibition (verb+な)" },
+  ]},
+  { key:"passive", label:"Passive / causative", forms:[
+    { key:"受身形",     label:"受身形",     note:"passive" },
+    { key:"使役形",     label:"使役形",     note:"causative" },
+    { key:"使役受身形", label:"使役受身形", note:"caus-passive" },
+  ]},
+  { key:"te-compounds", label:"て-form compounds", forms:[
+    { key:"〜ている",   label:"〜ている",   note:"ongoing / state" },
+    { key:"〜ておく",   label:"〜ておく",   note:"do in advance" },
+    { key:"〜てしまう", label:"〜てしまう", note:"completion / regret" },
+    { key:"〜てあげる", label:"〜てあげる", note:"do for s.o." },
+    { key:"〜てもらう", label:"〜てもらう", note:"have s.o. do" },
+    { key:"〜てくれる", label:"〜てくれる", note:"s.o. does for me" },
+  ]},
+];
+
+const IADJ_FORM_GROUPS = [
+  { key:"basic", label:"Basic forms", forms:[
+    { key:"くて形",     label:"くて形",     note:"te-form / and" },
+    { key:"くない形",   label:"くない形",   note:"negative" },
+    { key:"かった形",   label:"かった形",   note:"past" },
+    { key:"くなかった", label:"くなかった", note:"past negative" },
+  ]},
+  { key:"deriv", label:"Derived forms", forms:[
+    { key:"く形",   label:"く形", note:"adverb" },
+    { key:"さ形",   label:"さ形", note:"noun (さ)" },
+  ]},
+];
+
+const NAADJ_FORM_GROUPS = [
+  { key:"basic", label:"Basic forms", forms:[
+    { key:"で形",         label:"で形",         note:"te-form / and" },
+    { key:"じゃない形",   label:"じゃない形",   note:"negative" },
+    { key:"だった形",     label:"だった形",     note:"past" },
+    { key:"じゃなかった", label:"じゃなかった", note:"past negative" },
+  ]},
+  { key:"deriv", label:"Derived forms", forms:[
+    { key:"に形", label:"に形", note:"adverb" },
+    { key:"さ形", label:"さ形", note:"noun (さ)" },
+  ]},
+];
+
+function getFormGroups(type) {
+  if (type.startsWith("verb")) return VERB_FORM_GROUPS;
+  if (type === "i-adj") return IADJ_FORM_GROUPS;
+  if (type === "na-adj") return NAADJ_FORM_GROUPS;
+  return [];
+}
+
+function allFormKeys(type) {
+  return getFormGroups(type).flatMap(g => g.forms.map(f => f.key));
+}
+
+// ── DEFAULT DATA ──────────────────────────────────────────────────────
+const DEFAULT_VOCAB = [
+  { id:1, japanese:"食べる", reading:"たべる", meaning:"to eat", type:"verb-ru", forms:{
+    "て形":"食べて","た形":"食べた","ない形":"食べない","ます形":"食べます",
+    "ば形":"食べれば","たら形":"食べたら","可能形":"食べられる","意向形":"食べよう",
+    "命令形":"食べろ","禁止形":"食べるな","受身形":"食べられる","使役形":"食べさせる",
+    "使役受身形":"食べさせられる","〜ている":"食べている","〜ておく":"食べておく",
+    "〜てしまう":"食べてしまう"
+  }},
+  { id:2, japanese:"飲む", reading:"のむ", meaning:"to drink", type:"verb-u", forms:{
+    "て形":"飲んで","た形":"飲んだ","ない形":"飲まない","ます形":"飲みます",
+    "ば形":"飲めば","たら形":"飲んだら","可能形":"飲める","意向形":"飲もう",
+    "命令形":"飲め","禁止形":"飲むな","受身形":"飲まれる","使役形":"飲ませる",
+    "使役受身形":"飲まされる"
+  }},
+  { id:3, japanese:"する", reading:"する", meaning:"to do", type:"verb-irr", forms:{
+    "て形":"して","た形":"した","ない形":"しない","ます形":"します",
+    "ば形":"すれば","たら形":"したら","可能形":"できる","意向形":"しよう",
+    "命令形":"しろ／せよ","禁止形":"するな","受身形":"される","使役形":"させる",
+    "使役受身形":"させられる","〜ている":"している","〜ておく":"しておく","〜てしまう":"してしまう"
+  }},
+  { id:4, japanese:"嬉しい", reading:"うれしい", meaning:"happy / glad", type:"i-adj", forms:{
+    "くて形":"嬉しくて","くない形":"嬉しくない","かった形":"嬉しかった",
+    "くなかった":"嬉しくなかった","く形":"嬉しく","さ形":"嬉しさ"
+  }},
+  { id:5, japanese:"静か", reading:"しずか", meaning:"quiet / peaceful", type:"na-adj", forms:{
+    "で形":"静かで","じゃない形":"静かじゃない","だった形":"静かだった",
+    "じゃなかった":"静かじゃなかった","に形":"静かに","さ形":"静かさ"
+  }},
+  { id:6, japanese:"電車", reading:"でんしゃ", meaning:"train", type:"noun", forms:{} },
+  { id:7, japanese:"難しい", reading:"むずかしい", meaning:"difficult", type:"i-adj", forms:{
+    "くて形":"難しくて","くない形":"難しくない","かった形":"難しかった",
+    "くなかった":"難しくなかった","く形":"難しく","さ形":"難しさ"
+  }},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────
+let vocab=[], scores={}, queue=[], qIdx=0, flipped=false;
+let activeTab="review", filterType="all";
+let sessionDone=false, sessionKnown=0, sessionLearning=0;
+let addFormType="noun", openAddGroups={};
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem("goi_v3")||"null");
+    if (d) { vocab=d.vocab; scores=d.scores; } else { vocab=DEFAULT_VOCAB; scores={}; }
+  } catch { vocab=DEFAULT_VOCAB; scores={}; }
+}
+function save() {
+  try { localStorage.setItem("goi_v3", JSON.stringify({vocab,scores})); } catch {}
+}
+function buildQueue() {
+  const pool = filterType==="all" ? vocab : vocab.filter(w=>w.type===filterType);
+  queue=[...pool].sort(()=>Math.random()-.5);
+  qIdx=0; flipped=false; sessionDone=false; sessionKnown=0; sessionLearning=0;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function updateSub() {
+  const learned = Object.values(scores).filter(s=>s.known>=1).length;
+  document.getElementById("header-sub").textContent = `${vocab.length} words · ${learned} learned`;
+}
+
+function render() {
+  updateSub();
+  const el = document.getElementById("main-content");
+  if (activeTab==="review") el.innerHTML = renderReview();
+  else if (activeTab==="words") el.innerHTML = renderWords();
+  else el.innerHTML = renderAdd();
+  attachHandlers();
+}
+
+function renderFilterRow() {
+  const all = `<button class="chip ${filterType==="all"?"active":""}" data-filter="all">All</button>`;
+  const chips = ALL_TYPES.filter(t=>vocab.some(w=>w.type===t)).map(t=>`
+    <button class="chip ${filterType===t?"active":""}" data-filter="${t}">
+      <span class="type-dot" style="background:${TYPE_COLORS[t]}"></span>${TYPE_LABELS[t]}
+    </button>`).join("");
+  return `<div class="filter-row">${all}${chips}</div>`;
+}
+
+// ── REVIEW ────────────────────────────────────────────────────────────
+function renderReview() {
+  const pool = filterType==="all" ? vocab : vocab.filter(w=>w.type===filterType);
+  const fr = renderFilterRow();
+  if (!pool.length) return fr+`<div class="empty"><div class="empty-char">空</div><div class="empty-text">No words in this category.</div></div>`;
+  if (sessionDone) return fr+`
+    <div class="done-screen">
+      <div class="done-kanji">完了</div>
+      <div class="done-label">Session complete</div>
+      <div class="done-stats">
+        <div class="done-stat"><div class="done-num">${sessionKnown}</div><div class="done-stat-label">Knew it</div></div>
+        <div class="done-stat"><div class="done-num">${sessionLearning}</div><div class="done-stat-label">Learning</div></div>
+      </div>
+      <button class="btn-primary" id="restart-btn">Review again</button>
+    </div>`;
+
+  if (!queue.length) buildQueue();
+  const card = queue[qIdx];
+  if (!card) { buildQueue(); return renderReview(); }
+
+  const color = TYPE_COLORS[card.type]||"#999";
+  const label = TYPE_LABELS[card.type]||card.type;
+  const groups = getFormGroups(card.type);
+  const hasAnyForm = groups.some(g=>g.forms.some(f=>card.forms&&card.forms[f.key]));
+
+  const segs = queue.map((_,i)=>`<div class="progress-seg ${i<qIdx?"done":i===qIdx?"current":""}"></div>`).join("");
+
+  // Build forms accordion (only groups with at least one filled form)
+  let formsHTML = "";
+  if (hasAnyForm) {
+    const groupsHTML = groups.map((g,gi)=>{
+      const filledForms = g.forms.filter(f=>card.forms&&card.forms[f.key]);
+      if (!filledForms.length) return "";
+      const isOpen = gi===0; // first group open by default
+      return `
+        <div>
+          <div class="forms-group-header ${isOpen?"":"collapsed"}" data-group="${gi}">
+            <span class="forms-group-title">${g.label}</span>
+            <span class="forms-group-arrow ${isOpen?"open":""}">▶</span>
+          </div>
+          <div class="forms-group-body ${isOpen?"open":""}">
+            ${filledForms.map(f=>`
+              <div class="form-row">
+                <div class="form-label">${f.label}<br><span style="color:var(--muted);font-size:8px;letter-spacing:0">${f.note}</span></div>
+                <div class="form-value">${card.forms[f.key]}</div>
+              </div>`).join("")}
+          </div>
+        </div>`;
+    }).join("");
+    formsHTML = `<div class="forms-panel ${flipped?"visible":""}" id="forms-panel">${groupsHTML}</div>`;
+  }
+
+  return fr+`
+    <div class="progress-bar">${segs}</div>
+    <div class="card-wrap" id="card-wrap">
+      <div class="card-inner ${flipped?"flipped":""}" id="card-inner">
+        <div class="card-face card-front">
+          <div class="card-type-label" style="color:${color}">${label}</div>
+          <div class="card-jp">${card.japanese}</div>
+          <div class="flip-hint" ${flipped?"style='display:none'":""}>Tap to reveal</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-type-label" style="color:${color}">${label}</div>
+          <div class="card-reading">${card.reading||""}</div>
+          <div class="card-meaning" style="margin-top:12px">${card.meaning}</div>
+        </div>
+      </div>
+    </div>
+    ${formsHTML}
+    <div class="grade-row ${flipped?"":"hidden"}">
+      <button class="btn btn-learning" id="grade-learning">Still learning</button>
+      <button class="btn btn-known" id="grade-known">Knew it</button>
+    </div>
+    <div class="session-counter">${qIdx+1} / ${queue.length}</div>`;
+}
+
+// ── WORDS ─────────────────────────────────────────────────────────────
+function renderWords() {
+  const fr = renderFilterRow();
+  const pool = filterType==="all" ? vocab : vocab.filter(w=>w.type===filterType);
+  if (!pool.length) return fr+`<div class="empty"><div class="empty-char">空</div><div class="empty-text">No words here yet.</div></div>`;
+  const grouped={};
+  pool.forEach(w=>{ if(!grouped[w.type]) grouped[w.type]=[]; grouped[w.type].push(w); });
+  let html=fr;
+  ALL_TYPES.forEach(type=>{
+    if (!grouped[type]) return;
+    const color=TYPE_COLORS[type];
+    html+=`<div class="section-header"><span class="type-dot" style="background:${color}"></span>${TYPE_LABELS[type]}</div>`;
+    grouped[type].forEach(w=>{
+      const s=scores[w.id]||{}; const known=s.known||0;
+      const formCount = w.forms ? Object.keys(w.forms).length : 0;
+      html+=`<div class="word-row">
+        <div style="flex:1;min-width:0">
+          <div class="word-jp">${w.japanese} <span class="word-kana">${w.reading||""}</span></div>
+          <div class="word-meaning">${w.meaning}</div>
+          ${formCount>0?`<div class="word-has-forms">${formCount} forms stored</div>`:""}
+        </div>
+        ${known>0?`<div class="recall-pill">×${known}</div>`:""}
+        <button class="del-btn" data-del="${w.id}">✕</button>
+      </div>`;
+    });
+  });
+  return html;
+}
+
+// ── ADD ───────────────────────────────────────────────────────────────
+function renderAdd() {
+  const typeChips = ALL_TYPES.map(t=>`
+    <button class="type-chip ${addFormType===t?"selected":""}" data-type="${t}">${TYPE_LABELS[t]}</button>`).join("");
+  const groups = getFormGroups(addFormType);
+  let formsSection = "";
+  if (groups.length) {
+    const groupsHTML = groups.map((g,gi)=>{
+      const isOpen = !!openAddGroups[gi];
+      return `<div class="forms-group-add">
+        <div class="forms-group-add-header" data-addgroup="${gi}">
+          <span>${g.label}</span><span>${isOpen?"▾":"▸"}</span>
+        </div>
+        <div class="forms-group-add-body ${isOpen?"open":""}">
+          ${g.forms.map(f=>`
+            <div class="form-input-row">
+              <div class="form-input-label">${f.label}</div>
+              <input class="form-input-field" id="form-${f.key}" placeholder="${f.note}" />
+            </div>`).join("")}
+        </div>
+      </div>`;
+    }).join("");
+    formsSection=`<div>
+      <label class="field-label">Word forms <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+      <div class="forms-section">${groupsHTML}</div>
+    </div>`;
+  }
+  return `<div class="add-form">
+    <div><label class="field-label">Japanese *</label><input class="field-input jp-input" id="inp-jp" placeholder="e.g. 食べる" /></div>
+    <div><label class="field-label">Reading (kana)</label><input class="field-input jp-input" id="inp-reading" placeholder="e.g. たべる" /></div>
+    <div><label class="field-label">Meaning *</label><input class="field-input" id="inp-meaning" placeholder="e.g. to eat" /></div>
+    <div><label class="field-label">Type *</label><div class="type-chips">${typeChips}</div></div>
+    ${formsSection}
+    <button class="btn-primary" id="save-btn" style="width:100%;padding:13px">Add to vocabulary</button>
+  </div>`;
+}
+
+// ── HANDLERS ─────────────────────────────────────────────────────────
+function attachHandlers() {
+  // filter chips
+  document.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{
+    filterType=el.dataset.filter; buildQueue(); render();
+  }));
+  // card flip
+  document.getElementById("card-wrap")?.addEventListener("click",()=>{
+    flipped=!flipped;
+    document.getElementById("card-inner")?.classList.toggle("flipped",flipped);
+    document.getElementById("forms-panel")?.classList.toggle("visible",flipped);
+    document.querySelector(".grade-row")?.classList.toggle("hidden",!flipped);
+    if (flipped) document.querySelector(".flip-hint")?.remove();
+  });
+  // forms accordion (review)
+  document.querySelectorAll(".forms-group-header").forEach(el=>el.addEventListener("click",()=>{
+    const body=el.nextElementSibling; const arrow=el.querySelector(".forms-group-arrow");
+    const open=body.classList.toggle("open");
+    arrow.classList.toggle("open",open);
+  }));
+  // grade
+  document.getElementById("grade-known")?.addEventListener("click",()=>grade(true));
+  document.getElementById("grade-learning")?.addEventListener("click",()=>grade(false));
+  // restart
+  document.getElementById("restart-btn")?.addEventListener("click",()=>{ buildQueue(); render(); });
+  // delete
+  document.querySelectorAll("[data-del]").forEach(el=>el.addEventListener("click",()=>{
+    const id=parseInt(el.dataset.del); vocab=vocab.filter(w=>w.id!==id); delete scores[id]; save(); render();
+  }));
+  // add form type chips
+  document.querySelectorAll(".type-chip[data-type]").forEach(el=>el.addEventListener("click",()=>{
+    addFormType=el.dataset.type; openAddGroups={}; render();
+    document.getElementById("main-content").scrollTop=0;
+  }));
+  // add form groups accordion
+  document.querySelectorAll("[data-addgroup]").forEach(el=>el.addEventListener("click",()=>{
+    const gi=el.dataset.addgroup;
+    openAddGroups[gi]=!openAddGroups[gi];
+    const body=el.nextElementSibling;
+    body.classList.toggle("open",!!openAddGroups[gi]);
+    el.querySelector("span:last-child").textContent=openAddGroups[gi]?"▾":"▸";
+  }));
+  // save
+  document.getElementById("save-btn")?.addEventListener("click",()=>{
+    const jp=document.getElementById("inp-jp")?.value.trim();
+    const reading=document.getElementById("inp-reading")?.value.trim();
+    const meaning=document.getElementById("inp-meaning")?.value.trim();
+    if (!jp||!meaning) { alert("Japanese and meaning are required."); return; }
+    const forms={};
+    allFormKeys(addFormType).forEach(k=>{
+      const v=document.getElementById(`form-${k}`)?.value.trim(); if(v) forms[k]=v;
+    });
+    vocab.push({ id:Date.now(), japanese:jp, reading, meaning, type:addFormType, forms });
+    save(); filterType=addFormType; activeTab="words"; openAddGroups={}; render();
+  });
+}
+
+function grade(known) {
+  const card=queue[qIdx];
+  const prev=scores[card.id]||{known:0,learning:0};
+  scores[card.id]=known?{known:prev.known+1,learning:prev.learning}:{known:prev.known,learning:prev.learning+1};
+  if(known) sessionKnown++; else sessionLearning++;
+  save();
+  if (qIdx+1>=queue.length) { sessionDone=true; flipped=false; render(); }
+  else { qIdx++; flipped=false; render(); }
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────
+document.querySelectorAll(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>{
+  activeTab=btn.dataset.tab;
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  if (activeTab==="review") buildQueue();
+  render();
+}));
+document.getElementById("add-btn").addEventListener("click",()=>{
+  activeTab="add";
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab==="add"));
+  render();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────
+load(); buildQueue(); render();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>
