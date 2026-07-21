@@ -1,7 +1,7 @@
 {
   "name": "Poketto — Japanese Vocab",
   "short_name": "Poketto",
-  "description": "Japanese vocabulary flashcard app with conjugations",
+  "description": "Offline Japanese vocabulary notebook with active recall and conjugations",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
