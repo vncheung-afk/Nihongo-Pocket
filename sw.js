@@ -1,4 +1,4 @@
-const CACHE = "poketto-v7";
+const CACHE = "poketto-v9";
 const ASSETS = [
   "./",
   "./index.html",

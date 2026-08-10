@@ -145,15 +145,15 @@
     .notice { font-size:11px; color:var(--mid); background:#F0EDE6; border-radius:3px; padding:8px 12px; line-height:1.5; }
     .notice b { color:var(--gold); font-weight:600; }
     .btn-primary { width:100%; background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:500; padding:13px; }
-    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; padding-top:env(safe-area-inset-top); }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; display:flex; align-items:flex-end; justify-content:center; }
     .modal-overlay.hidden { display:none; }
-    .modal { position:absolute; bottom:0; left:0; right:0; background:var(--bg); border-radius:14px 14px 0 0; width:100%; max-width:560px; margin:0 auto; max-height:92vh; display:flex; flex-direction:column; padding-bottom:var(--safe-bottom); }
+    .modal { position:relative; width:100%; max-width:560px; max-height:min(92dvh, calc(100% - env(safe-area-inset-top, 0px) - 12px)); background:var(--bg); border-radius:14px 14px 0 0; display:flex; flex-direction:column; overflow:hidden; }
     .modal-header { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 12px; border-bottom:1px solid var(--line); flex-shrink:0; }
     .modal-title { font-family:'Noto Serif JP',serif; font-size:22px; font-weight:300; }
     .modal-subtitle { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
     .modal-close { background:none; border:none; cursor:pointer; font-size:18px; color:var(--muted); padding:4px 6px; }
-    .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; }
-    .modal-footer { padding:12px 20px; border-top:1px solid var(--line); display:flex; gap:10px; flex-shrink:0; align-items:center; }
+    .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1 1 auto; min-height:0; }
+    .modal-footer { padding:12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--line); display:flex; gap:10px; flex-shrink:0; align-items:center; }
     .btn-danger { background:transparent; color:var(--red); border:1px solid #E8C4C0; border-radius:3px; cursor:pointer; font-family:inherit; font-size:11px; font-weight:500; padding:8px 14px; }
     .btn-save { background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:500; padding:10px 20px; margin-left:auto; }
     .detail-section { padding:14px 20px; border-bottom:1px solid var(--line); }
@@ -312,9 +312,9 @@ var NAADJ_GROUPS = [
     {key:"datta", label:"〜だった (past)",  col:"plain"},
     {key:"janakata",label:"〜じゃなかった (past neg)",col:"plain"},
     {key:"desu",  label:"〜です (polite)",  col:"polite"},
-    {key:"desunai",label:"〜じゃないです (pol neg)",col:"polite"},
-    {key:"deshita",label:"〜だったです (pol past)",col:"polite"},
-    {key:"deshitanai",label:"〜じゃなかったです (pol past neg)",col:"polite"},
+    {key:"desunai",label:"〜ではないです (pol neg)",col:"polite"},
+    {key:"deshita",label:"〜でした (pol past)",col:"polite"},
+    {key:"deshitanai",label:"〜ではなかったです (pol past neg)",col:"polite"},
   ]},
   {key:"deriv",label:"Derived",forms:[
     {key:"ni",label:"〜に (adverb)"},
@@ -375,7 +375,7 @@ function conjugate(word, type) {
   if (type === "na-adj") {
     f.de = word+"\u3067"; f.janai = word+"\u3058\u3083\u306A\u3044"; f.datta = word+"\u3060\u3063\u305F";
     f.janakata = word+"\u3058\u3083\u306A\u304B\u3063\u305F"; f.ni = word+"\u306B"; f.sa = word+"\u3055";
-    f.desu=word+"\u3067\u3059";f.desunai=word+"\u3058\u3083\u306A\u3044\u3067\u3059";f.deshita=word+"\u3060\u3063\u305F\u3067\u3059";f.deshitanai=word+"\u3058\u3083\u306A\u304B\u3063\u305F\u3067\u3059";
+    f.desu=word+"\u3067\u3059";f.desunai=word+"\u3067\u306F\u306A\u3044\u3067\u3059";f.deshita=word+"\u3067\u3057\u305F";f.deshitanai=word+"\u3067\u306F\u306A\u304B\u3063\u305F\u3067\u3059";
     return f;
   }
   if (type === "verb-irr") {
@@ -426,7 +426,7 @@ function conjugate(word, type) {
     f.masen=masuStem+"\u307E\u305B\u3093";f.mashita=masuStem+"\u307E\u3057\u305F";f.masendeshita=masuStem+"\u307E\u305B\u3093\u3067\u3057\u305F";f.masho=masuStem+"\u307E\u3057\u3087\u3046";
     f.nakatta=stem+({"\u3046":"\u308F","\u304F":"\u304B","\u3050":"\u304C","\u3059":"\u3055","\u3064":"\u305F","\u306C":"\u306A","\u3076":"\u3070","\u3080":"\u307E","\u308B":"\u3089"}[last]||"?")+"\u306A\u304B\u3063\u305F";
     f.nakereba=stem+({"\u3046":"\u308F","\u304F":"\u304B","\u3050":"\u304C","\u3059":"\u3055","\u3064":"\u305F","\u306C":"\u306A","\u3076":"\u3070","\u3080":"\u307E","\u308B":"\u3089"}[last]||"?")+"\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044";
-    var teStem2=uTe(word);f.naidekudasai=teStem2.slice(0,-1)+"\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
+    f.naidekudasai=stem+(naiS[last]||"?")+"\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
     return f;
   }
   return f;
