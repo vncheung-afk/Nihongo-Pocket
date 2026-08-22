@@ -420,7 +420,7 @@ function conjugate(word, type) {
     f.ba=stem+(eS[last]||"?")+"\u3070";f.tara=ta+"\u3089";f.kano=stem+(eS[last]||"?")+"\u308B";
     f.iko=stem+(oS[last]||"?")+"\u3046";f.mei=stem+(eS[last]||"?");f.kin=word+"\u306A";
     f.ukemi=stem+(naiS[last]||"?")+"\u308C\u308B";f.shieki=stem+(naiS[last]||"?")+"\u305B\u308B";
-    f.shiekiukemi=stem+(naiS[last]||"?")+"\u305B\u3089\u308C\u308B";
+    f.shiekiukemi=stem+(naiS[last]||"?")+"\u3055\u308C\u308B";
     // polite forms — masu stem = stem + masuS[last]
     var masuStem=stem+({"\u3046":"\u3044","\u304F":"\u304D","\u3050":"\u304E","\u3059":"\u3057","\u3064":"\u3061","\u306C":"\u306B","\u3076":"\u3073","\u3080":"\u307F","\u308B":"\u308A"}[last]||"?");
     f.masen=masuStem+"\u307E\u305B\u3093";f.mashita=masuStem+"\u307E\u3057\u305F";f.masendeshita=masuStem+"\u307E\u305B\u3093\u3067\u3057\u305F";f.masho=masuStem+"\u307E\u3057\u3087\u3046";
@@ -833,7 +833,6 @@ function renderReview(){
         +'</div>'
       +'</div>'
     +'</div>'
-    +renderFormsPanel(card,flipped)
     +(autoCheck?'<div class="grade-row '+(flipped?"":"hidden")+'"><button class="btn btn-known" id="next-card">Next</button></div>':'<div class="grade-row '+(flipped?"":"hidden")+'">'
       +'<button class="btn btn-learning" id="grade-learning">Still learning</button>'
       +'<button class="btn btn-known" id="grade-known">Knew it</button>'
