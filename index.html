@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Poketto" />
-  <meta name="theme-color" content="#1A1A1A" />
+  <meta name="theme-color" content="#F7F6F3" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Poketto</title>
@@ -288,6 +288,9 @@
     .settings-screen > .settings-disclosure { margin-top:0; }
     .settings-disclosure-body .settings-row + .settings-copy { margin-top:16px; }
     .settings-btn { min-height:40px; }
+
+    .voice-preview { display:inline-flex; align-items:center; gap:8px; }
+    .voice-preview svg { color:var(--gold); flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -751,12 +754,18 @@ function renderGeminiSettings() {
     +'<div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save key</button></div>'
     +'<div id="gemini-status" class="settings-copy" role="status" aria-live="polite"></div>'
     +'<details class="settings-disclosure"><summary>Advanced</summary><div class="settings-disclosure-body">'
+      +'<label class="dfl" for="playback-voice">Playback voice</label><select class="dfi" id="playback-voice">'+playbackVoiceOptions()+'</select>'
+      +'<div class="settings-row"><button type="button" class="settings-btn voice-preview" id="voice-preview" aria-label="Preview playback voice">'+speakerIcon()+'<span>Preview voice</span></button></div><div class="settings-copy voice-copy">Only Japanese voices available on this device are listed. Your choice saves automatically.</div>'
       +'<label class="dfl" for="gemini-model">Model</label><select class="dfi" id="gemini-model">'+modelPickerOptions(models,selected)+'</select>'
       +'<div class="settings-row"><button class="settings-btn" id="gemini-load-models">Load available models</button><button class="settings-btn" id="gemini-forget">Remove key</button></div>'
       +'<div class="settings-copy">Suggestions send the current entry to Google. Remembered keys stay in this browser and are excluded from backups. Otherwise, re-enter your key after reopening. Google API limits apply.</div>'
     +'</div></details></div>';
 }
 function attachGeminiSettings(){
+  var voicePicker=document.getElementById('playback-voice');
+  if(voicePicker)voicePicker.onchange=function(){try{localStorage.setItem('poketto_playback_voice',voicePicker.value);}catch(e){document.getElementById('gemini-status').textContent='Could not save the voice preference in this browser.';}};
+  var previewVoice=document.getElementById('voice-preview');
+  if(previewVoice)previewVoice.onclick=function(){speakJapanese('こんにちは。日本語の音声です。');};
   var button=document.getElementById('gemini-save');if(!button)return;
   document.getElementById('gemini-load-models').onclick=loadGeminiModelPicker;
   button.onclick=function(){
@@ -829,12 +838,28 @@ function correctionMarkup(item,recall,attempt){
 }
 
 // ---- AUDIO ----
+function getJapanesePlaybackVoices(){
+  if(!window.speechSynthesis)return [];
+  return window.speechSynthesis.getVoices().filter(function(v){return /^ja(?:[-_]|$)/i.test(v.lang);});
+}
+function savedPlaybackVoice(){try{return localStorage.getItem('poketto_playback_voice')||'';}catch(e){return '';}}
+function playbackVoiceOptions(){
+  var selected=savedPlaybackVoice();
+  return '<option value="">Device default</option>'+getJapanesePlaybackVoices().map(function(v){var id=v.voiceURI||v.name;return '<option value="'+escAttr(id)+'"'+(id===selected?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+}
+function refreshPlaybackVoicePicker(){var picker=document.getElementById('playback-voice');if(picker)picker.innerHTML=playbackVoiceOptions();}
 function speakJapanese(text){
   if(!text||!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
   var u=new SpeechSynthesisUtterance(text);
   u.lang="ja-JP";u.rate=0.9;
+  var preferred=savedPlaybackVoice();
+  if(preferred){var voice=getJapanesePlaybackVoices().find(function(v){return (v.voiceURI||v.name)===preferred;});if(voice)u.voice=voice;}
   window.speechSynthesis.speak(u);
+}
+if(window.speechSynthesis){
+  window.speechSynthesis.getVoices();
+  if(window.speechSynthesis.addEventListener)window.speechSynthesis.addEventListener('voiceschanged',refreshPlaybackVoicePicker);
 }
 
 // ---- SRS: Leitner 5-box ----
