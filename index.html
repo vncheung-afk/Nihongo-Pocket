@@ -276,6 +276,18 @@
     .settings-disclosure { margin-top:14px; }
     .settings-disclosure summary { cursor:pointer; color:var(--mid); font-size:12px; padding:8px 0; }
     .settings-disclosure-body { padding-top:12px; }
+
+    .settings-screen { gap:20px; }
+    .settings-screen .dfl { display:block; margin:0 0 8px; }
+    .settings-remember { display:flex; align-items:center; gap:8px; margin:12px 0 16px; font-size:12px; line-height:1.5; color:var(--mid); }
+    .settings-remember input { width:16px; height:16px; flex-shrink:0; margin:0; accent-color:var(--ink); }
+    .settings-screen .settings-row { margin-top:12px; gap:10px; }
+    .settings-remember + .settings-row { margin-top:0; }
+    #gemini-status:empty { display:none; }
+    #gemini-status:not(:empty) { margin:12px 0 0; }
+    .settings-screen > .settings-disclosure { margin-top:0; }
+    .settings-disclosure-body .settings-row + .settings-copy { margin-top:16px; }
+    .settings-btn { min-height:40px; }
 </style>
 </head>
 <body>
@@ -732,10 +744,10 @@ function renderGeminiSettings() {
   var selected=savedGeminiModel();
   var models=geminiCatalog&&geminiCatalog.key===(geminiKey||settings.key)?geminiCatalog.models:[];
   if(selected!=='auto'&&!models.some(function(m){return m.name===selected;}))models=models.concat([{name:selected,label:selected}]);
-  return '<div class="settings-section"><div class="settings-title">Gemini</div>'
-    +'<div class="settings-copy">Create Japanese phrases and examples.</div>'
-    +'<label class="dfl" for="gemini-key">API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key saved — enter to replace':'Paste your Gemini API key')+'" />'
-    +'<label class="settings-copy"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label>'
+  return '<div class="settings-section"><div class="settings-title">AI suggestions</div>'
+    +'<div class="settings-copy">Using Gemini for Japanese phrases and examples.</div>'
+    +'<label class="dfl" for="gemini-key">Gemini API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key saved — enter to replace':'Paste your Gemini API key')+'" />'
+    +'<label class="settings-remember"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label>'
     +'<div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save key</button></div>'
     +'<div id="gemini-status" class="settings-copy" role="status" aria-live="polite"></div>'
     +'<details class="settings-disclosure"><summary>Advanced</summary><div class="settings-disclosure-body">'
