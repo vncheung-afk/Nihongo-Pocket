@@ -24,6 +24,7 @@
     .notebook-row { display:flex; gap:5px; align-items:center; margin:8px 0; }
     .notebook-text { min-width:0; flex:1; resize:vertical; border:1px solid var(--line); background:var(--card-bg); border-radius:3px; padding:8px; font-family:'Noto Serif JP',serif; font-size:14px; line-height:1.6; color:var(--ink); }
     .notebook-row button,.notebook-actions button { border:0; background:transparent; color:var(--mid); cursor:pointer; padding:6px; font-family:inherit; font-size:12px; }
+    .notebook-audio svg { margin:auto; }
     .notebook-row button { min-width:30px; min-height:36px; }
     .notebook-actions { display:flex; gap:14px; }
     .notebook-status { font-size:12px; color:var(--mid); line-height:1.5; margin-top:6px; }
@@ -247,6 +248,7 @@
     .notebook-row { display:flex; gap:5px; align-items:center; margin:8px 0; }
     .notebook-text { min-width:0; flex:1; resize:vertical; border:1px solid var(--line); background:var(--card-bg); border-radius:3px; padding:8px; font-family:'Noto Serif JP',serif; font-size:14px; line-height:1.6; color:var(--ink); }
     .notebook-row button,.notebook-actions button { border:0; background:transparent; color:var(--mid); cursor:pointer; padding:6px; font-family:inherit; font-size:12px; }
+    .notebook-audio svg { margin:auto; }
     .notebook-row button { min-width:30px; min-height:36px; }
     .notebook-actions { display:flex; gap:14px; }
     .notebook-status { font-size:12px; color:var(--mid); line-height:1.5; margin-top:6px; }
@@ -575,8 +577,9 @@ function readGeminiSettings() {
   try { return JSON.parse(localStorage.getItem("poketto_gemini") || "{}"); }
   catch(e) { return {}; }
 }
+function speakerIcon() { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'; }
 function exampleRows(kind, rows) {
-  return rows.map(function(c){return '<div class="notebook-row"><textarea class="notebook-text" rows="2" lang="ja" aria-label="'+(kind==="examples"?"Example sentence":"Collocation")+'" placeholder="'+(kind==="examples"?"日本語の例文":"日本語のフレーズ")+'">'+esc(c.japanese)+'</textarea><button type="button" class="notebook-audio" aria-label="Play Japanese">🔊</button><button type="button" class="notebook-retry" aria-label="Regenerate">↻</button><button type="button" class="notebook-remove" aria-label="Remove draft">×</button><input type="hidden" class="legacy-gloss" value="'+escAttr(c.gloss||"")+'" /></div>';}).join("");
+  return rows.map(function(c){return '<div class="notebook-row"><textarea class="notebook-text" rows="2" lang="ja" aria-label="'+(kind==="examples"?"Example sentence":"Collocation")+'" placeholder="'+(kind==="examples"?"日本語の例文":"日本語のフレーズ")+'">'+esc(c.japanese)+'</textarea><button type="button" class="notebook-audio speak-btn" aria-label="Play Japanese">'+speakerIcon()+'</button><button type="button" class="notebook-retry" aria-label="Regenerate">↻</button><button type="button" class="notebook-remove" aria-label="Remove draft">×</button><input type="hidden" class="legacy-gloss" value="'+escAttr(c.gloss||"")+'" /></div>';}).join("");
 }
 function notebookSection(kind, rows) {
   return '<section class="notebook-section" data-notebook="'+kind+'"><div class="notebook-heading">'+(kind==="examples"?"Examples":"Collocations")+'</div><div class="notebook-rows">'+exampleRows(kind,rows||[])+'</div><div class="notebook-actions"><button type="button" data-write="'+kind+'">＋ Write</button><button type="button" data-generate="'+kind+'">✦ Generate</button></div><div class="notebook-status" role="status" aria-live="polite"></div></section>';
@@ -1238,7 +1241,7 @@ function openDetailModal(id){
   var w=vocab.find(function(v){return String(v.id)===String(id);});
   if(!w)return;
   var color=TYPE_COLORS[w.type]||"#999";
-  document.getElementById("modal-title").innerHTML=esc(w.japanese)+(w.reading?' <span style="font-size:14px;color:var(--muted);font-family:\'Noto Serif JP\',serif">'+esc(w.reading)+'</span>':"")+'<button class="speak-btn" id="modal-speak" style="font-size:17px;margin-left:6px;vertical-align:middle">&#128264;</button>';
+  document.getElementById("modal-title").innerHTML=esc(w.japanese)+(w.reading?' <span style="font-size:14px;color:var(--muted);font-family:\'Noto Serif JP\',serif">'+esc(w.reading)+'</span>':"")+'<button class="speak-btn" id="modal-speak" style="font-size:17px;margin-left:6px;vertical-align:middle" aria-label="Play Japanese">'+speakerIcon()+'</button>';
   // wire speak after innerHTML set
   setTimeout(function(){var ms=document.getElementById("modal-speak");if(ms)ms.addEventListener("click",function(){speakJapanese(w.japanese);});},0);
   document.getElementById("modal-subtitle").innerHTML='<span style="color:'+color+'">'+TYPE_LABELS[w.type]+'</span>';
