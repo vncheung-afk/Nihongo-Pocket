@@ -1,4 +1,4 @@
-const CACHE = "poketto-v12";
+const CACHE = "poketto-v13";
 const ASSETS = [
   "./",
   "./index.html",
@@ -20,7 +20,7 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
+  if (e.request.method !== "GET" || new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(response => {
       const copy = response.clone();

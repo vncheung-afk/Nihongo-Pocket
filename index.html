@@ -577,6 +577,60 @@ function readGeminiSettings() {
   try { return JSON.parse(localStorage.getItem("poketto_gemini") || "{}"); }
   catch(e) { return {}; }
 }
+var geminiCatalog = null;
+function savedGeminiModel(){
+  var model=readGeminiSettings().model;
+  return !model||model==='gemini-2.5-flash'?'auto':model;
+}
+function compatibleGeminiModels(models){
+  return models.filter(function(m){return /^models\/gemini-[a-zA-Z0-9._-]+$/.test(m.name||'')&&(m.supportedGenerationMethods||[]).indexOf('generateContent')>=0&&!/(image|audio|live|tts|embedding|robotics|computer-use|transcribe|nano-banana|deep-research)/i.test(m.name);}).map(function(m){return {name:m.name.replace(/^models\//,''),label:m.displayName||m.name.replace(/^models\//,'')};}).sort(function(a,b){
+    function rank(m){return (/flash/i.test(m.name)?0:100)+(/lite/i.test(m.name)?0:10)+(/preview|experimental|exp-|latest/i.test(m.name)?20:0);}
+    return rank(a)-rank(b)||b.name.localeCompare(a.name,undefined,{numeric:true});
+  });
+}
+async function listGeminiModels(key,signal,refresh){
+  if(!refresh&&geminiCatalog&&geminiCatalog.key===key&&Date.now()-geminiCatalog.time<300000)return geminiCatalog.models;
+  var all=[],token='',seen={};
+  do{
+    var url='https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000'+(token?'&pageToken='+encodeURIComponent(token):'');
+    var response=await fetch(url,{headers:{'x-goog-api-key':key},signal:signal,credentials:'omit',cache:'no-store'});
+    if(!response.ok)throw new Error(response.status===429?'Google usage limit reached. Try again later.':response.status===400||response.status===401||response.status===403?'Google could not list models. Check your Gemini API key and its permissions.':'Could not load models from Google. Try again later.');
+    var data=await response.json();all=all.concat(Array.isArray(data.models)?data.models:[]);
+    token=data.nextPageToken||'';
+    if(token&&seen[token])throw new Error('Google returned an incomplete model list. Try again.');
+    if(token)seen[token]=true;
+  }while(token);
+  var models=compatibleGeminiModels(all);
+  if(!models.length)throw new Error('Google returned no compatible text models for this key. Check the key in Google AI Studio.');
+  geminiCatalog={key:key,time:Date.now(),models:models};return models;
+}
+async function resolveGeminiModel(key,signal){
+  var models=await listGeminiModels(key,signal,false),saved=savedGeminiModel();
+  if(saved!=='auto'&&models.some(function(m){return m.name===saved;}))return saved;
+  var flash=models.find(function(m){return /flash/i.test(m.name);});
+  if(!flash)throw new Error('No compatible Flash model was listed. Load models in Settings and choose a text model.');
+  return flash.name;
+}
+function modelPickerOptions(models,selected){
+  return '<option value="auto"'+(selected==='auto'?' selected':'')+'>Automatic — available Flash model</option>'+models.map(function(m){return '<option value="'+escAttr(m.name)+'"'+(m.name===selected?' selected':'')+'>'+esc(m.label)+'</option>';}).join('');
+}
+async function loadGeminiModelPicker(){
+  var status=document.getElementById('gemini-status'),button=document.getElementById('gemini-load-models'),picker=document.getElementById('gemini-model');
+  var key=document.getElementById('gemini-key').value.trim()||geminiKey||readGeminiSettings().key||'';
+  if(!key){status.textContent='Enter your Gemini API key first.';return;}
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},20000);
+  button.disabled=true;status.textContent='Loading available models from Google…';
+  try{
+    var models=await listGeminiModels(key,controller.signal,true);
+    if(!picker.isConnected)return;
+    var selected=picker.value;
+    if(!models.some(function(m){return m.name===selected;}))selected='auto';
+    picker.innerHTML=modelPickerOptions(models,selected);
+    status.textContent='Models loaded. Choose one or keep Automatic, then save the connection.';
+  }catch(e){if(status.isConnected)status.textContent=e.name==='AbortError'?'Model lookup timed out. Try again.':e instanceof TypeError?'Could not connect to Google. Check your connection.':e.message;}
+  finally{clearTimeout(timer);if(button.isConnected)button.disabled=false;}
+}
+
 function speakerIcon() { return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>'; }
 function exampleRows(kind, rows) {
   return rows.map(function(c){return '<div class="notebook-row"><textarea class="notebook-text" rows="2" lang="ja" aria-label="'+(kind==="examples"?"Example sentence":"Collocation")+'" placeholder="'+(kind==="examples"?"日本語の例文":"日本語のフレーズ")+'">'+esc(c.japanese)+'</textarea><button type="button" class="notebook-audio speak-btn" aria-label="Play Japanese">'+speakerIcon()+'</button><button type="button" class="notebook-retry" aria-label="Regenerate">↻</button><button type="button" class="notebook-remove" aria-label="Remove draft">×</button><input type="hidden" class="legacy-gloss" value="'+escAttr(c.gloss||"")+'" /></div>';}).join("");
@@ -624,14 +678,15 @@ async function generateNotebook(section,row) {
   var key=geminiKey||readGeminiSettings().key;
   if(!key){status.textContent='Add your Gemini key in Settings first. You can still write your own.';return;}
   if(exampleRequest){status.textContent='A suggestion is already being generated.';return;}
-  var model=readGeminiSettings().model||'gemini-2.5-flash';
+  var model;
   var controller=new AbortController();exampleRequest=controller;
   var timer=setTimeout(function(){controller.abort();},30000);
   status.textContent='Generating…';
   section.querySelectorAll('button').forEach(function(b){b.disabled=true;});
   try {
+    model=await resolveGeminiModel(key,controller.signal);
     var response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(geminiRequestBody(word,section.dataset.notebook,collectNotebook(section.dataset.notebook).map(function(c){return c.japanese;}))),signal:controller.signal,credentials:'omit',cache:'no-store'});
-    if(!response.ok)throw new Error(response.status===429?'Gemini usage limit reached. Try again later.':response.status===400||response.status===401||response.status===403?'Check your Gemini key and model access in Settings.':response.status===404?'This model is unavailable. Change the model in Settings.':'Gemini is unavailable. Try again later.');
+    if(!response.ok)throw new Error(response.status===429?'Gemini usage limit reached. Try again later.':response.status===400||response.status===401||response.status===403?'Check your Gemini key and model access in Settings.':response.status===404?'Google could not generate with this model. Load models in Settings, choose another text model, and save the connection.':'Gemini is unavailable. Try again later.');
     var suggestion=parseGeminiExample(await response.json());
     if(!section.isConnected)return;
     if(row&&row.isConnected)row.querySelector('textarea').value=suggestion;
@@ -642,19 +697,23 @@ async function generateNotebook(section,row) {
 }
 function renderGeminiSettings() {
   var settings=readGeminiSettings();
-  return '<div class="settings-section"><div class="settings-title">Gemini suggestions</div><div class="settings-copy">Generate Japanese phrases and sentences on demand. Only the current word, reading, meaning and examples in that section are sent to Google. Suggestions stay editable until you save.</div><label class="dfl" for="gemini-key">API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key already set — enter to replace':'Enter your Gemini API key')+'" /><label class="settings-copy"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label><div class="settings-copy">Otherwise the key lasts until you reload. A remembered key is stored in this browser, accessible to scripts on this site. It is excluded from vocabulary backups.</div><label class="dfl" for="gemini-model">Model</label><input class="dfi" id="gemini-model" value="'+escAttr(settings.model||'gemini-2.5-flash')+'" /><div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save connection</button><button class="settings-btn" id="gemini-forget">Forget key</button></div><div id="gemini-status" class="settings-copy" role="status"></div></div>';
+  var selected=savedGeminiModel();
+  var models=geminiCatalog&&geminiCatalog.key===(geminiKey||settings.key)?geminiCatalog.models:[];
+  if(selected!=='auto'&&!models.some(function(m){return m.name===selected;}))models=models.concat([{name:selected,label:selected}]);
+  return '<div class="settings-section"><div class="settings-title">Gemini suggestions</div><div class="settings-copy">Generate Japanese phrases and sentences on demand. Only the current word, reading, meaning and examples in that section are sent to Google. Suggestions stay editable until you save.</div><label class="dfl" for="gemini-key">API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key already set — enter to replace':'Enter your Gemini API key')+'" /><label class="settings-copy"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label><div class="settings-copy">Otherwise the key lasts until you reload. A remembered key is stored in this browser, accessible to scripts on this site. It is excluded from vocabulary backups.</div><label class="dfl" for="gemini-model">Model</label><select class="dfi" id="gemini-model">'+modelPickerOptions(models,selected)+'</select><div class="settings-copy">Automatic chooses an available Flash text model. Availability does not guarantee free quota.</div><button class="settings-btn" id="gemini-load-models">Load available models</button><div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save connection</button><button class="settings-btn" id="gemini-forget">Forget key</button></div><div id="gemini-status" class="settings-copy" role="status"></div></div>';
 }
 function attachGeminiSettings(){
   var button=document.getElementById('gemini-save');if(!button)return;
+  document.getElementById('gemini-load-models').onclick=loadGeminiModelPicker;
   button.onclick=function(){
     var key=document.getElementById('gemini-key').value.trim()||geminiKey||readGeminiSettings().key||'';
     var model=document.getElementById('gemini-model').value.trim();
     var status=document.getElementById('gemini-status');
     if(!key){status.textContent='Enter your Gemini API key.';return;}
-    if(!/^gemini-[a-zA-Z0-9._-]+$/.test(model)){status.textContent='Enter a Gemini model name, such as gemini-2.5-flash.';return;}
+    if(model!=='auto'&&!/^gemini-[a-zA-Z0-9._-]+$/.test(model)){status.textContent='Choose a model from the list.';return;}
     try{localStorage.setItem('poketto_gemini',JSON.stringify({model:model,key:document.getElementById('gemini-remember').checked?key:undefined}));geminiKey=key;document.getElementById('gemini-key').value='';status.textContent='Connection saved. Ready to generate; the key is checked on your first request.';}catch(e){status.textContent='Could not save settings in this browser.';}
   };
-  document.getElementById('gemini-forget').onclick=function(){geminiKey='';try{localStorage.removeItem('poketto_gemini');}catch(e){}document.getElementById('gemini-key').value='';document.getElementById('gemini-key').placeholder='Enter your Gemini API key';document.getElementById('gemini-remember').checked=false;document.getElementById('gemini-status').textContent='Key removed.';};
+  document.getElementById('gemini-forget').onclick=function(){geminiKey='';geminiCatalog=null;try{localStorage.removeItem('poketto_gemini');}catch(e){}document.getElementById('gemini-key').value='';document.getElementById('gemini-key').placeholder='Enter your Gemini API key';document.getElementById('gemini-remember').checked=false;document.getElementById('gemini-status').textContent='Key removed.';};
 }
 // ---- MIXED SENTENCE PRACTICE ----
 function kanaAnswerForForm(w, answer) {
