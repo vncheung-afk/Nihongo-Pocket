@@ -263,7 +263,20 @@
     .card-colloc-jp { white-space:normal; overflow-wrap:anywhere; flex-shrink:1; }
     .card-inner:has(.answer-panel) { min-height:350px; }
     .answer-feedback { line-height:1.5; }
-  </style>
+
+    .card-support { width:100%; margin-top:18px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12); text-align:left; }
+    .card-support-row { display:flex; align-items:center; gap:12px; }
+    .card-support-row + .card-support-row { margin-top:8px; }
+    .card-support-row span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:'Noto Serif JP',serif; line-height:1.65; }
+    .card-support-row.phrase span { font-size:16px; color:var(--bg); }
+    .card-support-row.example span { font-size:14px; color:rgba(247,246,243,.62); }
+    .card-support-audio { color:var(--gold); min-width:32px; min-height:36px; display:flex; align-items:center; justify-content:center; }
+    .card-inner:has(.card-support) { min-height:310px; }
+
+    .settings-disclosure { margin-top:14px; }
+    .settings-disclosure summary { cursor:pointer; color:var(--mid); font-size:12px; padding:8px 0; }
+    .settings-disclosure-body { padding-top:12px; }
+</style>
 </head>
 <body>
 <div id="app">
@@ -719,7 +732,17 @@ function renderGeminiSettings() {
   var selected=savedGeminiModel();
   var models=geminiCatalog&&geminiCatalog.key===(geminiKey||settings.key)?geminiCatalog.models:[];
   if(selected!=='auto'&&!models.some(function(m){return m.name===selected;}))models=models.concat([{name:selected,label:selected}]);
-  return '<div class="settings-section"><div class="settings-title">Gemini suggestions</div><div class="settings-copy">Generate Japanese phrases and sentences on demand. Only the current word, reading, meaning and examples in that section are sent to Google. Suggestions stay editable until you save.</div><label class="dfl" for="gemini-key">API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key already set — enter to replace':'Enter your Gemini API key')+'" /><label class="settings-copy"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label><div class="settings-copy">Otherwise the key lasts until you reload. A remembered key is stored in this browser, accessible to scripts on this site. It is excluded from vocabulary backups.</div><label class="dfl" for="gemini-model">Model</label><select class="dfi" id="gemini-model">'+modelPickerOptions(models,selected)+'</select><div class="settings-copy">Automatic chooses an available Flash text model. Availability does not guarantee free quota.</div><button class="settings-btn" id="gemini-load-models">Load available models</button><div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save connection</button><button class="settings-btn" id="gemini-forget">Forget key</button></div><div id="gemini-status" class="settings-copy" role="status"></div></div>';
+  return '<div class="settings-section"><div class="settings-title">Gemini</div>'
+    +'<div class="settings-copy">Create Japanese phrases and examples.</div>'
+    +'<label class="dfl" for="gemini-key">API key</label><input class="dfi" type="password" id="gemini-key" autocomplete="off" placeholder="'+(geminiKey||settings.key?'Key saved — enter to replace':'Paste your Gemini API key')+'" />'
+    +'<label class="settings-copy"><input type="checkbox" id="gemini-remember" '+(settings.key?'checked':'')+' /> Remember on this device</label>'
+    +'<div class="settings-row"><button class="settings-btn primary" id="gemini-save">Save key</button></div>'
+    +'<div id="gemini-status" class="settings-copy" role="status" aria-live="polite"></div>'
+    +'<details class="settings-disclosure"><summary>Advanced</summary><div class="settings-disclosure-body">'
+      +'<label class="dfl" for="gemini-model">Model</label><select class="dfi" id="gemini-model">'+modelPickerOptions(models,selected)+'</select>'
+      +'<div class="settings-row"><button class="settings-btn" id="gemini-load-models">Load available models</button><button class="settings-btn" id="gemini-forget">Remove key</button></div>'
+      +'<div class="settings-copy">Suggestions send the current entry to Google. Remembered keys stay in this browser and are excluded from backups. Otherwise, re-enter your key after reopening. Google API limits apply.</div>'
+    +'</div></details></div>';
 }
 function attachGeminiSettings(){
   var button=document.getElementById('gemini-save');if(!button)return;
@@ -730,7 +753,7 @@ function attachGeminiSettings(){
     var status=document.getElementById('gemini-status');
     if(!key){status.textContent='Enter your Gemini API key.';return;}
     if(model!=='auto'&&!/^gemini-[a-zA-Z0-9._-]+$/.test(model)){status.textContent='Choose a model from the list.';return;}
-    try{localStorage.setItem('poketto_gemini',JSON.stringify({model:model,key:document.getElementById('gemini-remember').checked?key:undefined}));geminiKey=key;document.getElementById('gemini-key').value='';status.textContent='Connection saved. Ready to generate; the key is checked on your first request.';}catch(e){status.textContent='Could not save settings in this browser.';}
+    try{localStorage.setItem('poketto_gemini',JSON.stringify({model:model,key:document.getElementById('gemini-remember').checked?key:undefined}));geminiKey=key;document.getElementById('gemini-key').value='';status.textContent='Key saved. Try Generate on a word.';}catch(e){status.textContent='Could not save settings in this browser.';}
   };
   document.getElementById('gemini-forget').onclick=function(){geminiKey='';geminiCatalog=null;try{localStorage.removeItem('poketto_gemini');}catch(e){}document.getElementById('gemini-key').value='';document.getElementById('gemini-key').placeholder='Enter your Gemini API key';document.getElementById('gemini-remember').checked=false;document.getElementById('gemini-status').textContent='Key removed.';};
 }
@@ -1075,6 +1098,14 @@ function renderFormsPanel(w, visible){
   return '<div class="forms-panel '+(visible?"visible":"")+'" id="forms-panel">'+inner+'</div>';
 }
 
+function renderCardSupport(card,recall) {
+  var phrase=(card.collocations||[]).find(function(c){return c.japanese;});
+  var example=recall.mode!=="sentence"&&(card.examples||[]).find(function(c){return c.japanese;});
+  if(!phrase&&!example)return "";
+  function row(text,kind){return '<div class="card-support-row '+kind+'"><span>'+esc(text)+'</span><button type="button" class="speak-btn card-support-audio" data-audio="'+escAttr(text)+'" aria-label="'+(kind==='phrase'?'Play collocation':'Play example')+'">'+speakerIcon()+'</button></div>';}
+  return '<div class="card-support">'+(phrase?row(phrase.japanese,'phrase'):'')+(example?row(example.japanese,'example'):'')+'</div>';
+}
+
 function renderReview(){
   var pool=filterType==="all"?vocab:vocab.filter(function(w){return w.type===filterType;});
   var fr=renderFilterRow();
@@ -1122,7 +1153,7 @@ function renderReview(){
             +'<div class="answer-actions"><button class="answer-btn reveal" id="answer-reveal">Reveal</button><button class="answer-btn check" id="answer-check">Check</button></div>'
             +'<div class="answer-feedback" id="answer-feedback"></div>'
           +'</div>':"")
-          
+
           +'<button class="speak-btn" style="position:absolute;bottom:10px;left:14px" id="speak-front"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="#1A1A1A" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="#1A1A1A" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="#1A1A1A" stroke-width="1.2" stroke-linecap="round"/></svg></button>'
           +(autoCheck?"":'<div class="flip-hint" id="flip-hint">Tap to reveal</div>')
         +'</div>'
@@ -1133,8 +1164,7 @@ function renderReview(){
           +'<div class="recall-answer '+escAttr(recall.answerClass||"")+'">'+esc(recall.answer)+'</div>'
           +(autoCheck?'<div class="auto-result" id="auto-result"></div>':"")
           +(recall.context?'<div class="recall-context">'+esc(recall.context)+'</div>':"")
-          +(recall.mode!=="sentence"&&card.examples&&card.examples.length?'<div class="card-colloc">'+card.examples.slice(0,1).map(function(c){return '<div class="card-colloc-jp">'+esc(c.japanese)+'</div>';}).join('')+'</div>':'')
-          +(card.collocations&&card.collocations.length?'<div class="card-colloc">'+card.collocations.map(function(c){return '<div class="card-colloc-row"><span class="card-colloc-jp">'+esc(c.japanese)+'</span>'+(c.gloss?'<span class="card-colloc-gl">'+esc(c.gloss)+'</span>':"")+'</div>';}).join("")+'</div>':"")
+          +renderCardSupport(card,recall)
           +'<button class="speak-btn" style="position:absolute;bottom:10px;right:14px" id="speak-back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="#C8A96E" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></button>'
         +'</div>'
       +'</div>'
@@ -1197,38 +1227,15 @@ function attachWordRowHandlers(){
 
 // ---- SETTINGS ----
 function renderSettings(){
-  var learned=Object.values(scores).filter(function(s){return s.known>=1;}).length;
-  var attempts=Object.values(scores).reduce(function(sum,s){return sum+(s.known||0)+(s.learning||0);},0);
-  return '<div class="settings-screen">'
-    +renderGeminiSettings()
-    +'<div class="settings-section">'
-      +'<div class="settings-title">Library</div>'
-      +'<div class="settings-stats">'
-        +'<div class="settings-stat"><div class="settings-num">'+vocab.length+'</div><div class="settings-label">Words</div></div>'
-        +'<div class="settings-stat"><div class="settings-num">'+learned+'</div><div class="settings-label">Learned</div></div>'
-        +'<div class="settings-stat"><div class="settings-num">'+attempts+'</div><div class="settings-label">Reviews</div></div>'
-      +'</div>'
+  return '<div class="settings-screen">'+renderGeminiSettings()
+    +'<div class="settings-section"><div class="settings-title">Backup</div>'
+      +'<div class="settings-copy">Keep a copy of your notebook. Import replaces this device’s words and progress.</div>'
+      +'<div class="settings-row"><button class="settings-btn primary" id="export-btn">Export backup</button><button class="settings-btn" id="import-btn">Import backup</button><input class="settings-file" type="file" id="import-file" accept="application/json,.json" /></div>'
     +'</div>'
-    +'<div class="settings-section">'
-      +'<div class="settings-title">Backup</div>'
-      +'<div class="settings-copy">Export a Poketto backup before updating GitHub or changing phones. Import replaces the words and review history on this device.</div>'
-      +'<div class="settings-row">'
-        +'<button class="settings-btn primary" id="export-btn">Export backup</button>'
-        +'<button class="settings-btn" id="import-btn">Import backup</button>'
-        +'<input class="settings-file" type="file" id="import-file" accept="application/json,.json" />'
-      +'</div>'
-    +'</div>'
-    +'<div class="settings-section">'
-      +'<div class="settings-title">Review data</div>'
-      +'<div class="settings-copy">Reset scores when you want a fresh review history without deleting your vocabulary.</div>'
-      +'<div class="settings-row"><button class="settings-btn danger" id="reset-progress-btn">Reset progress</button></div>'
-    +'</div>'
-    +'<div class="settings-section">'
-      +'<div class="settings-title">Starter words</div>'
-      +'<div class="settings-copy">Restore the original sample list. This replaces your current words, so export first if you want to keep them.</div>'
-      +'<div class="settings-row"><button class="settings-btn danger" id="restore-defaults-btn">Restore defaults</button></div>'
-    +'</div>'
-  +'</div>';
+    +'<details class="settings-section settings-disclosure"><summary>Manage data</summary><div class="settings-disclosure-body">'
+      +'<div class="settings-copy">Reset review progress while keeping your words.</div><div class="settings-row"><button class="settings-btn danger" id="reset-progress-btn">Reset progress</button></div>'
+      +'<div class="settings-copy">Restore the starter words. This replaces your notebook; export a backup first.</div><div class="settings-row"><button class="settings-btn danger" id="restore-defaults-btn">Restore defaults</button></div>'
+    +'</div></details></div>';
 }
 
 function exportBackup(){
@@ -1550,6 +1557,9 @@ function attachHandlers(){
   var ac=document.getElementById("answer-check");if(ac)ac.addEventListener("click",function(e){e.stopPropagation();checkTypedAnswer();});
   var ar=document.getElementById("answer-reveal");if(ar)ar.addEventListener("click",function(e){e.stopPropagation();revealTypedAnswer();});
   var nc=document.getElementById("next-card");if(nc)nc.addEventListener("click",function(){nextReviewCard();});
+  document.querySelectorAll('[data-audio]').forEach(function(button){
+    button.addEventListener('click',function(e){e.stopPropagation();speakJapanese(button.dataset.audio);});
+  });
   // speak buttons
   var card=getQueueWord(queue[qIdx]);
   var sf=document.getElementById("speak-front");
