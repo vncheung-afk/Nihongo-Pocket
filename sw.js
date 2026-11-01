@@ -1,9 +1,8 @@
-const CACHE = "poketto-v2";
+const CACHE = "poketto-v10";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon.svg",
   "./icon-192.png",
   "./icon-512.png"
 ];

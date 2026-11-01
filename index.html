@@ -10,23 +10,30 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Poketto</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin />
+  <link href="https://fonts.googleapis.cn/css2?family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" media="all" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" media="all" />
+  <style>
+    /* Ensure fonts never block rendering — UI shows immediately with system fonts */
+    @font-face { font-family:'Noto Serif JP'; font-display:swap; }
+    @font-face { font-family:'Inter'; font-display:swap; }
+  </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #F7F6F3; --ink: #1A1A1A; --mid: #6B6966; --muted: #B0ADA6;
       --line: #E8E6E1; --gold: #C8A96E; --card-bg: #FFFFFF; --card-back: #1A1A1A;
       --red: #C0392B; --green: #4A8A6A;
-      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-top: max(env(safe-area-inset-top, 0px), 18px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
     html, body { height:100%; background:var(--bg); font-family:'Inter',system-ui,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased; overflow:hidden; }
     #app { display:flex; flex-direction:column; height:100%; max-width:560px; margin:0 auto; }
-    .header { padding:calc(var(--safe-top) + 16px) 20px 12px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--bg); }
-    .header-logo { font-family:'Noto Serif JP',serif; font-size:18px; font-weight:400; letter-spacing:1px; }
+    .header { padding:calc(var(--safe-top) + 20px) 20px 12px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:var(--bg); }
+    .header-logo { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:18px; font-weight:400; letter-spacing:1px; }
     .header-sub { font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-top:2px; }
-    .btn-add-top { background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:10px; font-weight:500; letter-spacing:.06em; padding:8px 14px; }
+    .btn-add-top { background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:10px; font-weight:500; letter-spacing:.06em; padding:10px 14px; min-height:38px; }
     .nav { display:flex; border-bottom:1px solid var(--line); padding:0 20px; flex-shrink:0; background:var(--bg); }
     .nav-btn { background:none; border:none; cursor:pointer; font-family:inherit; font-size:11px; font-weight:500; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); padding:10px 14px 9px; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s,border-color .15s; }
     .nav-btn.active { color:var(--ink); border-bottom-color:var(--ink); }
@@ -37,7 +44,7 @@
     .chip.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
     .type-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; display:inline-block; }
     .search-wrap { position:relative; margin:10px 0 4px; }
-    .search-input { width:100%; padding:9px 12px 9px 34px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:13px; color:var(--ink); outline:none; -webkit-appearance:none; transition:border-color .15s; }
+    .search-input { width:100%; padding:9px 12px 9px 34px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:13px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; transition:border-color .15s; }
     .search-input:focus { border-color:var(--ink); }
     .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; pointer-events:none; }
     .search-clear { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:2px 4px; display:none; }
@@ -49,13 +56,34 @@
     .card-wrap { perspective:1200px; cursor:pointer; user-select:none; -webkit-user-select:none; }
     .card-inner { position:relative; width:100%; height:230px; transform-style:preserve-3d; transition:transform 0.5s cubic-bezier(.4,0,.2,1); }
     .card-inner.flipped { transform:rotateY(180deg); }
-    .card-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+    .card-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 24px; }
     .card-front { background:var(--card-bg); border:1px solid var(--line); }
-    .card-back { background:var(--card-back); transform:rotateY(180deg); color:var(--bg); }
+    .card-back { background:var(--card-back); transform:rotateY(180deg); color:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .card-type-label { position:absolute; top:12px; left:14px; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-weight:500; }
-    .card-jp { font-family:'Noto Serif JP',serif; font-size:54px; font-weight:300; letter-spacing:-1px; line-height:1; }
-    .card-reading { font-family:'Noto Serif JP',serif; font-size:13px; color:var(--gold); margin-top:10px; letter-spacing:2px; }
+    .card-jp { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:54px; font-weight:300; letter-spacing:-1px; line-height:1; }
+    .card-reading { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:13px; color:var(--gold); margin-top:10px; letter-spacing:2px; }
     .card-meaning { font-size:17px; font-weight:400; text-align:center; line-height:1.4; color:var(--bg); }
+    .recall-mode { position:absolute; top:12px; right:14px; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-weight:500; color:var(--muted); }
+    .recall-question { font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; text-align:center; }
+    .conj-target { display:inline-flex; align-items:center; justify-content:center; min-height:26px; padding:6px 12px; border:1px solid var(--line); border-radius:20px; background:#FAF8F2; font-size:10px; font-weight:600; letter-spacing:1.1px; text-transform:uppercase; color:var(--gold); margin-bottom:12px; text-align:center; }
+    .recall-front-text { font-size:24px; font-weight:300; line-height:1.35; text-align:center; color:var(--ink); }
+    .recall-front-text.jp { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:48px; }
+    .recall-front-sub { font-size:12px; color:var(--mid); margin-top:10px; text-align:center; line-height:1.4; }
+    .recall-answer-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(247,246,243,0.48); margin-bottom:10px; }
+    .recall-answer { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:42px; font-weight:300; line-height:1.18; text-align:center; color:var(--bg); }
+    .recall-answer.en { font-family:'Inter',system-ui,sans-serif; font-size:24px; line-height:1.35; }
+    .recall-context { margin-top:12px; font-size:12px; color:rgba(247,246,243,0.58); text-align:center; line-height:1.45; }
+    .answer-panel { width:100%; margin-top:18px; display:flex; flex-direction:column; gap:9px; }
+    .answer-input { width:100%; padding:10px 12px; background:var(--bg); border:1px solid var(--line); border-radius:3px; font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:19px; color:var(--ink); outline:none; text-align:center; appearance:none; -webkit-appearance:none; }
+    .answer-input:focus { border-color:var(--ink); }
+    .answer-actions { display:flex; gap:8px; }
+    .answer-btn { flex:1; border:none; cursor:pointer; font-family:inherit; font-size:11px; font-weight:500; letter-spacing:.06em; border-radius:3px; padding:10px; }
+    .answer-btn.check { background:var(--ink); color:var(--bg); }
+    .answer-btn.reveal { background:transparent; color:var(--mid); border:1px solid var(--line); }
+    .answer-feedback { min-height:16px; font-size:11px; color:var(--mid); text-align:center; }
+    .answer-feedback.correct { color:var(--green); }
+    .answer-feedback.wrong { color:var(--red); }
+    .auto-result { margin-top:10px; font-size:11px; color:var(--gold); text-align:center; min-height:16px; }
     .flip-hint { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-top:12px; font-weight:500; }
     .forms-panel { background:var(--card-bg); border:1px solid var(--line); border-radius:4px; margin-top:10px; overflow:hidden; opacity:0; transform:translateY(5px); transition:opacity .25s,transform .25s; pointer-events:none; }
     .forms-panel.visible { opacity:1; transform:none; pointer-events:auto; }
@@ -68,7 +96,19 @@
     .form-row { display:flex; align-items:baseline; padding:7px 14px; border-bottom:1px solid var(--line); gap:10px; }
     .form-row:last-child { border-bottom:none; }
     .form-lbl { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:500; width:76px; flex-shrink:0; line-height:1.5; }
-    .form-val { font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); }
+    .form-val { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:14px; color:var(--ink); }
+
+    .forms-grid { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line); }
+    .forms-grid-hd { padding:5px 10px; font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-weight:600; background:var(--bg); border-bottom:1px solid var(--line); }
+    .forms-grid-hd.plain { border-right:1px solid var(--line); }
+    .forms-grid-cell { padding:6px 8px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); }
+    .forms-grid-cell .fe-inp { width:100%; font-size:13px; padding:5px 7px; margin-top:3px; }
+    .forms-grid-cell .fe-reset { font-size:11px; padding:2px 4px; }
+    .forms-grid-cell.polite { border-right:none; }
+    .forms-grid-cell:last-child { border-bottom:none; }
+    .forms-grid-cell:nth-last-child(2):nth-child(odd) { border-bottom:none; }
+    .forms-grid-lbl { font-size:8px; letter-spacing:0.8px; color:var(--muted); text-transform:uppercase; margin-bottom:3px; }
+    .forms-grid-val { font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); }
     .edited-badge { font-size:8px; letter-spacing:1px; color:var(--gold); text-transform:uppercase; font-weight:600; margin-left:6px; }
     .grade-row { display:flex; gap:10px; margin-top:10px; transition:opacity .2s; }
     .grade-row.hidden { opacity:0; pointer-events:none; }
@@ -87,7 +127,7 @@
     .section-hd { padding:16px 0 6px; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-weight:500; display:flex; align-items:center; gap:7px; }
     .word-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); cursor:pointer; }
     .word-row:last-child { border-bottom:none; }
-    .word-jp { font-family:'Noto Serif JP',serif; font-size:16px; }
+    .word-jp { font-family:'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif; font-size:16px; }
     .word-kana { font-family:'Noto Serif JP',serif; font-size:10px; color:var(--muted); margin-left:6px; }
     .word-meaning { font-size:11px; color:var(--mid); margin-top:1px; }
     .word-meta { font-size:9px; color:var(--gold); margin-top:1px; }
@@ -96,7 +136,7 @@
     .no-results { text-align:center; padding:40px 0; font-size:13px; color:var(--muted); }
     .form-screen { padding:16px 0; display:flex; flex-direction:column; gap:14px; }
     .field-label { display:block; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:6px; }
-    .field-input { width:100%; padding:10px 12px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:14px; color:var(--ink); outline:none; transition:border-color .15s; -webkit-appearance:none; }
+    .field-input { width:100%; padding:10px 12px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:14px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; transition:border-color .15s; }
     .field-input:focus { border-color:var(--ink); }
     .jp-input { font-family:'Noto Serif JP',serif !important; font-size:18px !important; }
     .type-chips { display:flex; gap:7px; flex-wrap:wrap; }
@@ -107,19 +147,19 @@
     .btn-primary { width:100%; background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:500; padding:13px; }
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; display:flex; align-items:flex-end; justify-content:center; }
     .modal-overlay.hidden { display:none; }
-    .modal { background:var(--bg); border-radius:14px 14px 0 0; width:100%; max-width:560px; max-height:92vh; display:flex; flex-direction:column; padding-bottom:var(--safe-bottom); }
+    .modal { position:relative; width:100%; max-width:560px; max-height:min(92dvh, calc(100% - env(safe-area-inset-top, 0px) - 12px)); background:var(--bg); border-radius:14px 14px 0 0; display:flex; flex-direction:column; overflow:hidden; }
     .modal-header { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 12px; border-bottom:1px solid var(--line); flex-shrink:0; }
     .modal-title { font-family:'Noto Serif JP',serif; font-size:22px; font-weight:300; }
     .modal-subtitle { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
     .modal-close { background:none; border:none; cursor:pointer; font-size:18px; color:var(--muted); padding:4px 6px; }
-    .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1; }
-    .modal-footer { padding:12px 20px; border-top:1px solid var(--line); display:flex; gap:10px; flex-shrink:0; align-items:center; }
+    .modal-body { overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1 1 auto; min-height:0; }
+    .modal-footer { padding:12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--line); display:flex; gap:10px; flex-shrink:0; align-items:center; }
     .btn-danger { background:transparent; color:var(--red); border:1px solid #E8C4C0; border-radius:3px; cursor:pointer; font-family:inherit; font-size:11px; font-weight:500; padding:8px 14px; }
     .btn-save { background:var(--ink); color:var(--bg); border:none; border-radius:3px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:500; padding:10px 20px; margin-left:auto; }
     .detail-section { padding:14px 20px; border-bottom:1px solid var(--line); }
     .detail-section:last-child { border-bottom:none; }
     .dfl { font-size:9px; letter-spacing:1.3px; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:5px; }
-    .dfi { width:100%; padding:8px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:13px; color:var(--ink); outline:none; -webkit-appearance:none; transition:border-color .15s; }
+    .dfi { width:100%; padding:8px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:13px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; transition:border-color .15s; }
     .dfi:focus { border-color:var(--ink); }
     .dfi.jp { font-family:'Noto Serif JP',serif; font-size:17px; }
     .recall-row { display:flex; gap:24px; }
@@ -134,10 +174,36 @@
     .fe-gb.open { display:block; }
     .fe-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
     .fe-lbl { font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); font-weight:500; width:76px; flex-shrink:0; line-height:1.5; }
-    .fe-inp { flex:1; padding:7px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); outline:none; -webkit-appearance:none; }
+    .fe-inp { flex:1; padding:7px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; }
     .fe-inp.auto { border-color:transparent; background:#F7F9F7; color:var(--mid); }
     .fe-inp.edited { border-color:var(--gold); background:#FDFAF4; }
     .fe-reset { background:none; border:none; cursor:pointer; font-size:13px; color:var(--muted); padding:3px 5px; flex-shrink:0; }
+
+    .speak-btn { background:none; border:none; cursor:pointer; padding:4px; line-height:0; flex-shrink:0; -webkit-tap-highlight-color:transparent; opacity:0.45; transition:opacity .15s; }
+    .speak-btn:active { opacity:1; }
+    .speak-btn svg { display:block; }
+
+    .card-colloc { margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.12); width:100%; text-align:left; max-height:80px; overflow-y:auto; }
+    .card-colloc-row { display:flex; align-items:baseline; gap:10px; padding:3px 0; }
+    .card-colloc-jp { font-family:'Noto Serif JP',serif; font-size:13px; color:#F7F6F3; flex-shrink:0; }
+    .card-colloc-gl { font-size:10px; color:rgba(247,246,243,0.5); letter-spacing:0.02em; }
+    .colloc-panel { background:var(--card-bg); border:1px solid var(--line); border-radius:4px; margin-top:8px; overflow:hidden; }
+    .colloc-hd { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; background:var(--bg); user-select:none; -webkit-user-select:none; }
+    .colloc-title { font-size:9px; letter-spacing:1.3px; text-transform:uppercase; color:var(--muted); font-weight:500; }
+    .colloc-arrow { font-size:9px; color:var(--muted); transition:transform .2s; display:inline-block; }
+    .colloc-arrow.open { transform:rotate(90deg); }
+    .colloc-body { display:none; }
+    .colloc-body.open { display:block; }
+    .colloc-row { padding:8px 14px; border-top:1px solid var(--line); }
+    .colloc-jp { font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); }
+    .colloc-gloss { font-size:11px; color:var(--muted); margin-top:2px; }
+    .colloc-edit-row { display:flex; align-items:center; gap:6px; margin-top:8px; }
+    .colloc-inp-jp { flex:1; padding:7px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:'Noto Serif JP',serif; font-size:14px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; min-width:0; }
+    .colloc-inp-gl { flex:1; padding:7px 10px; background:var(--card-bg); border:1px solid var(--line); border-radius:3px; font-family:inherit; font-size:12px; color:var(--ink); outline:none; appearance:none; -webkit-appearance:none; min-width:0; }
+    .colloc-inp-jp:focus, .colloc-inp-gl:focus { border-color:var(--ink); }
+    .colloc-rm { background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:4px 6px; flex-shrink:0; }
+    .colloc-add { background:none; border:none; cursor:pointer; font-family:inherit; font-size:11px; color:var(--mid); padding:10px 14px; display:block; width:100%; text-align:left; border-top:1px solid var(--line); }
+    .colloc-add:hover { color:var(--ink); }
     .empty { text-align:center; padding:60px 0; }
     .empty-char { font-family:'Noto Serif JP',serif; font-size:42px; color:var(--line); margin-bottom:12px; }
     .empty-text { font-size:12px; color:var(--muted); }
@@ -194,19 +260,66 @@ var TYPE_LABELS = {"verb-u":"u-verb","verb-ru":"ru-verb","verb-irr":"Irr. verb",
 var ALL_TYPES = Object.keys(TYPE_LABELS);
 
 var VERB_GROUPS = [
-  {key:"basic",label:"Basic",forms:[{key:"te",label:"te-form"},{key:"ta",label:"past"},{key:"nai",label:"negative"},{key:"masu",label:"polite"}]},
-  {key:"cond",label:"Conditional",forms:[{key:"ba",label:"if (formal)"},{key:"tara",label:"if / when"}]},
-  {key:"vol",label:"Potential & volitional",forms:[{key:"kano",label:"can/able to"},{key:"iko",label:"let's"},{key:"mei",label:"imperative"},{key:"kin",label:"prohibition"}]},
-  {key:"pass",label:"Passive & causative",forms:[{key:"ukemi",label:"passive"},{key:"shieki",label:"causative"},{key:"shiekiukemi",label:"caus-passive"}]},
-  {key:"te2",label:"te-compounds",forms:[{key:"teiru",label:"ongoing/state"},{key:"teoku",label:"in advance"},{key:"teshimau",label:"completion/regret"},{key:"teageru",label:"do for s.o."},{key:"temorau",label:"have s.o. do"},{key:"tekureru",label:"s.o. does for me"}]}
+  {key:"core",label:"Core forms",grid:true,forms:[
+    {key:"te",   label:"て (te-form)",    col:"plain"},
+    {key:"ta",   label:"た (past)",       col:"plain"},
+    {key:"nai",  label:"ない (neg)",      col:"plain"},
+    {key:"nakatta",label:"なかった (past neg)",col:"plain"},
+    {key:"masu", label:"ます (polite)",   col:"polite"},
+    {key:"mashita",label:"ました (polite past)",col:"polite"},
+    {key:"masen",label:"ません (polite neg)",col:"polite"},
+    {key:"masendeshita",label:"ませんでした (pol past neg)",col:"polite"},
+  ]},
+  {key:"extra",label:"Conditional & potential",forms:[
+    {key:"masho",label:"ましょう (let's — polite)"},
+    {key:"iko",  label:"よう (volitional)"},
+    {key:"ba",   label:"ば (conditional)"},
+    {key:"tara", label:"たら (if / when)"},
+    {key:"kano", label:"られる (potential)"},
+    {key:"nakereba",label:"なければならない (must)"},
+    {key:"naidekudasai",label:"ないでください (please don't)"},
+  ]},
+  {key:"command",label:"Command forms",forms:[
+    {key:"mei",  label:"命令形 (imperative)"},
+    {key:"kin",  label:"禁止形 (prohibition)"},
+  ]},
+  {key:"pass",label:"Passive & causative",forms:[
+    {key:"ukemi",label:"passive"},
+    {key:"shieki",label:"causative"},
+    {key:"shiekiukemi",label:"caus-passive"},
+  ]}
 ];
 var IADJ_GROUPS = [
-  {key:"basic",label:"Basic",forms:[{key:"kute",label:"te / and"},{key:"kunai",label:"negative"},{key:"katta",label:"past"},{key:"kunakata",label:"past negative"}]},
-  {key:"deriv",label:"Derived",forms:[{key:"ku",label:"adverb"},{key:"sa",label:"noun (sa)"}]}
+  {key:"core",label:"Core forms",grid:true,forms:[
+    {key:"kute",  label:"〜くて (te-form)",  col:"plain"},
+    {key:"kunai", label:"〜くない (neg)",    col:"plain"},
+    {key:"katta", label:"〜かった (past)",   col:"plain"},
+    {key:"kunakata",label:"〜くなかった (past neg)",col:"plain"},
+    {key:"desu",  label:"〜です (polite)",   col:"polite"},
+    {key:"desunai",label:"〜くないです (pol neg)",col:"polite"},
+    {key:"deshita",label:"〜かったです (pol past)",col:"polite"},
+    {key:"deshitanai",label:"〜くなかったです (pol past neg)",col:"polite"},
+  ]},
+  {key:"deriv",label:"Derived",forms:[
+    {key:"ku",label:"〜く (adverb)"},
+    {key:"sa",label:"〜さ (noun)"},
+  ]}
 ];
 var NAADJ_GROUPS = [
-  {key:"basic",label:"Basic",forms:[{key:"de",label:"te / and"},{key:"janai",label:"negative"},{key:"datta",label:"past"},{key:"janakata",label:"past negative"}]},
-  {key:"deriv",label:"Derived",forms:[{key:"ni",label:"adverb"},{key:"sa",label:"noun (sa)"}]}
+  {key:"core",label:"Core forms",grid:true,forms:[
+    {key:"de",    label:"〜で (te-form)",   col:"plain"},
+    {key:"janai", label:"〜じゃない (neg)", col:"plain"},
+    {key:"datta", label:"〜だった (past)",  col:"plain"},
+    {key:"janakata",label:"〜じゃなかった (past neg)",col:"plain"},
+    {key:"desu",  label:"〜です (polite)",  col:"polite"},
+    {key:"desunai",label:"〜ではないです (pol neg)",col:"polite"},
+    {key:"deshita",label:"〜でした (pol past)",col:"polite"},
+    {key:"deshitanai",label:"〜ではなかったです (pol past neg)",col:"polite"},
+  ]},
+  {key:"deriv",label:"Derived",forms:[
+    {key:"ni",label:"〜に (adverb)"},
+    {key:"sa",label:"〜さ (noun)"},
+  ]}
 ];
 
 function getGroups(type) {
@@ -217,10 +330,7 @@ function getGroups(type) {
 }
 
 // ---- CONJUGATION ENGINE ----
-var U_ROW   = {"u":"\u308F","ku":"\u304B","gu":"\u304C","su":"\u3055","tsu":"\u305F","nu":"\u306A","bu":"\u3070","mu":"\u307E","ru":"\u3089"};
-var U_MASU  = {"u":"\u3044","ku":"\u304D","gu":"\u304E","su":"\u3057","tsu":"\u3061","nu":"\u306B","bu":"\u3073","mu":"\u307F","ru":"\u308A"};
-var U_E     = {"u":"\u3048","ku":"\u3051","gu":"\u3052","su":"\u305B","tsu":"\u3066","nu":"\u306D","bu":"\u3079","mu":"\u3081","ru":"\u308C"};
-var U_O     = {"u":"\u304A","ku":"\u3053","gu":"\u3054","su":"\u305D","tsu":"\u3068","nu":"\u306E","bu":"\u307C","mu":"\u3082","ru":"\u308D"};
+// (conjugation uses inline maps — see conjugate())
 
 function lastKana(w) {
   // Return the final kana (handles multi-byte properly)
@@ -241,19 +351,43 @@ function uTa(w) {
   return stem + (m[last] || "?");
 }
 
+// These な-adjectives retain their final い in every conjugation.
+// Match exact spellings: endings alone cannot determine an adjective's type.
+function correctAdjectiveType(word, type) {
+  var naAdjectives = ["嫌い", "きらい", "大嫌い", "だいきらい",
+    "綺麗", "奇麗", "きれい", "キレイ",
+    "幸い", "さいわい"];
+  return type === "i-adj" && naAdjectives.indexOf(String(word || "").trim()) >= 0
+    ? "na-adj" : type;
+}
 function conjugate(word, type) {
+  return generateForms(word, correctAdjectiveType(word, type));
+}
+function generateForms(word, type) {
   var f = {};
   if (!word || type === "noun" || type === "expression") return f;
 
   if (type === "i-adj") {
-    var s = word.endsWith("\u3044") ? word.slice(0,-1) : word;
+    // Irregular i-adj stem exceptions: いい->よ, かっこいい->かっこよ
+    var IADJ_IRR = {
+      "\u3044\u3044":"\u3088",               // いい -> よ
+      "\u304B\u3063\u3053\u3044\u3044":"\u304B\u3063\u3053\u3088" // かっこいい -> かっこよ
+    };
+    var s;
+    if (IADJ_IRR[word]) {
+      s = IADJ_IRR[word];
+    } else {
+      s = word.endsWith("\u3044") ? word.slice(0,-1) : word;
+    }
     f.kute = s+"\u304F\u3066"; f.kunai = s+"\u304F\u306A\u3044"; f.katta = s+"\u304B\u3063\u305F";
     f.kunakata = s+"\u304F\u306A\u304B\u3063\u305F"; f.ku = s+"\u304F"; f.sa = s+"\u3055";
+    f.desu=word+"\u3067\u3059";f.desunai=s+"\u304F\u306A\u3044\u3067\u3059";f.deshita=s+"\u304B\u3063\u305F\u3067\u3059";f.deshitanai=s+"\u304F\u306A\u304B\u3063\u305F\u3067\u3059";
     return f;
   }
   if (type === "na-adj") {
     f.de = word+"\u3067"; f.janai = word+"\u3058\u3083\u306A\u3044"; f.datta = word+"\u3060\u3063\u305F";
     f.janakata = word+"\u3058\u3083\u306A\u304B\u3063\u305F"; f.ni = word+"\u306B"; f.sa = word+"\u3055";
+    f.desu=word+"\u3067\u3059";f.desunai=word+"\u3067\u306F\u306A\u3044\u3067\u3059";f.deshita=word+"\u3067\u3057\u305F";f.deshitanai=word+"\u3067\u306F\u306A\u304B\u3063\u305F\u3067\u3059";
     return f;
   }
   if (type === "verb-irr") {
@@ -261,15 +395,17 @@ function conjugate(word, type) {
       f.te="\u6765\u3066";f.ta="\u6765\u305F";f.nai="\u6765\u306A\u3044";f.masu="\u6765\u307E\u3059";
       f.ba="\u6765\u308C\u3070";f.tara="\u6765\u305F\u3089";f.kano="\u6765\u3089\u308C\u308B";f.iko="\u6765\u3088\u3046";
       f.mei="\u6765\u3044";f.kin="\u6765\u308B\u306A";f.ukemi="\u6765\u3089\u308C\u308B";f.shieki="\u6765\u3055\u305B\u308B";
-      f.shiekiukemi="\u6765\u3055\u305B\u3089\u308C\u308B";f.teiru="\u6765\u3066\u3044\u308B";f.teoku="\u6765\u3066\u304A\u304F";
-      f.teshimau="\u6765\u3066\u3057\u307E\u3046";f.teageru="\u6765\u3066\u3042\u3052\u308B";f.temorau="\u6765\u3066\u3082\u3089\u3046";f.tekureru="\u6765\u3066\u304F\u308C\u308B";
+      f.shiekiukemi="\u6765\u3055\u305B\u3089\u308C\u308B";
+      f.masen="\u6765\u307E\u305B\u3093";f.mashita="\u6765\u307E\u3057\u305F";f.masendeshita="\u6765\u307E\u305B\u3093\u3067\u3057\u305F";f.masho="\u6765\u307E\u3057\u3087\u3046";
+      f.nakatta="\u6765\u306A\u304B\u3063\u305F";f.nakereba="\u6765\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044";f.naidekudasai="\u6765\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
     } else {
       var pre = word.endsWith("\u3059\u308B") ? word.slice(0,-2) : ""; // Xする
       f.te=pre+"\u3057\u3066";f.ta=pre+"\u3057\u305F";f.nai=pre+"\u3057\u306A\u3044";f.masu=pre+"\u3057\u307E\u3059";
       f.ba=pre+"\u3059\u308C\u3070";f.tara=pre+"\u3057\u305F\u3089";f.kano=pre+"\u3067\u304D\u308B";f.iko=pre+"\u3057\u3088\u3046";
       f.mei=pre+"\u3057\u308D";f.kin=word+"\u306A";f.ukemi=pre+"\u3055\u308C\u308B";f.shieki=pre+"\u3055\u305B\u308B";
-      f.shiekiukemi=pre+"\u3055\u305B\u3089\u308C\u308B";f.teiru=pre+"\u3057\u3066\u3044\u308B";f.teoku=pre+"\u3057\u3066\u304A\u304F";
-      f.teshimau=pre+"\u3057\u3066\u3057\u307E\u3046";f.teageru=pre+"\u3057\u3066\u3042\u3052\u308B";f.temorau=pre+"\u3057\u3066\u3082\u3089\u3046";f.tekureru=pre+"\u3057\u3066\u304F\u308C\u308B";
+      f.shiekiukemi=pre+"\u3055\u305B\u3089\u308C\u308B";
+      f.masen=pre+"\u3057\u307E\u305B\u3093";f.mashita=pre+"\u3057\u307E\u3057\u305F";f.masendeshita=pre+"\u3057\u307E\u305B\u3093\u3067\u3057\u305F";f.masho=pre+"\u3057\u307E\u3057\u3087\u3046";
+      f.nakatta=pre+"\u3057\u306A\u304B\u3063\u305F";f.nakereba=pre+"\u3057\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044";f.naidekudasai=pre+"\u3057\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
     }
     return f;
   }
@@ -279,8 +415,10 @@ function conjugate(word, type) {
     f.te=te;f.ta=s+"\u305F";f.nai=s+"\u306A\u3044";f.masu=s+"\u307E\u3059";
     f.ba=s+"\u308C\u3070";f.tara=s+"\u305F\u3089";f.kano=s+"\u3089\u308C\u308B";f.iko=s+"\u3088\u3046";
     f.mei=s+"\u308D";f.kin=word+"\u306A";f.ukemi=s+"\u3089\u308C\u308B";f.shieki=s+"\u3055\u305B\u308B";
-    f.shiekiukemi=s+"\u3055\u305B\u3089\u308C\u308B";f.teiru=te+"\u3044\u308B";f.teoku=te+"\u304A\u304F";
-    f.teshimau=te+"\u3057\u307E\u3046";f.teageru=te+"\u3042\u3052\u308B";f.temorau=te+"\u3082\u3089\u3046";f.tekureru=te+"\u304F\u308C\u308B";
+    f.shiekiukemi=s+"\u3055\u305B\u3089\u308C\u308B";
+    // polite forms
+    f.masen=s+"\u307E\u305B\u3093";f.mashita=s+"\u307E\u3057\u305F";f.masendeshita=s+"\u307E\u305B\u3093\u3067\u3057\u305F";f.masho=s+"\u307E\u3057\u3087\u3046";
+    f.nakatta=s+"\u306A\u304B\u3063\u305F";f.nakereba=s+"\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044";f.naidekudasai=s+"\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
     return f;
   }
   if (type === "verb-u") {
@@ -294,9 +432,13 @@ function conjugate(word, type) {
     f.ba=stem+(eS[last]||"?")+"\u3070";f.tara=ta+"\u3089";f.kano=stem+(eS[last]||"?")+"\u308B";
     f.iko=stem+(oS[last]||"?")+"\u3046";f.mei=stem+(eS[last]||"?");f.kin=word+"\u306A";
     f.ukemi=stem+(naiS[last]||"?")+"\u308C\u308B";f.shieki=stem+(naiS[last]||"?")+"\u305B\u308B";
-    f.shiekiukemi=stem+(naiS[last]||"?")+"\u305B\u3089\u308C\u308B";
-    f.teiru=te+"\u3044\u308B";f.teoku=te+"\u304A\u304F";f.teshimau=te+"\u3057\u307E\u3046";
-    f.teageru=te+"\u3042\u3052\u308B";f.temorau=te+"\u3082\u3089\u3046";f.tekureru=te+"\u304F\u308C\u308B";
+    f.shiekiukemi=stem+(naiS[last]||"?")+"\u3055\u308C\u308B";
+    // polite forms — masu stem = stem + masuS[last]
+    var masuStem=stem+({"\u3046":"\u3044","\u304F":"\u304D","\u3050":"\u304E","\u3059":"\u3057","\u3064":"\u3061","\u306C":"\u306B","\u3076":"\u3073","\u3080":"\u307F","\u308B":"\u308A"}[last]||"?");
+    f.masen=masuStem+"\u307E\u305B\u3093";f.mashita=masuStem+"\u307E\u3057\u305F";f.masendeshita=masuStem+"\u307E\u305B\u3093\u3067\u3057\u305F";f.masho=masuStem+"\u307E\u3057\u3087\u3046";
+    f.nakatta=stem+({"\u3046":"\u308F","\u304F":"\u304B","\u3050":"\u304C","\u3059":"\u3055","\u3064":"\u305F","\u306C":"\u306A","\u3076":"\u3070","\u3080":"\u307E","\u308B":"\u3089"}[last]||"?")+"\u306A\u304B\u3063\u305F";
+    f.nakereba=stem+({"\u3046":"\u308F","\u304F":"\u304B","\u3050":"\u304C","\u3059":"\u3055","\u3064":"\u305F","\u306C":"\u306A","\u3076":"\u3070","\u3080":"\u307E","\u308B":"\u3089"}[last]||"?")+"\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044";
+    f.naidekudasai=stem+(naiS[last]||"?")+"\u306A\u3044\u3067\u304F\u3060\u3055\u3044";
     return f;
   }
   return f;
@@ -311,24 +453,171 @@ function getEffForms(w) {
   return out;
 }
 
+var RECALL_MODES = {
+  recognition: {label:"Meaning", question:"What does this mean?"},
+  production: {label:"Japanese", question:"Recall the Japanese"},
+  reading: {label:"Reading", question:"How do you read this?"},
+  conjugation: {label:"Conjugation", question:"Conjugate this"}
+};
+var RECALL_CONJUGATIONS = [
+  {key:"te", label:"Te form"},
+  {key:"ta", label:"Past plain"},
+  {key:"nai", label:"Negative plain"},
+  {key:"masu", label:"Masu form"},
+  {key:"kano", label:"Potential"},
+  {key:"kunai", label:"Negative"},
+  {key:"katta", label:"Past"},
+  {key:"janai", label:"Negative"},
+  {key:"datta", label:"Past"},
+  {key:"ni", label:"Adverb"}
+];
+
+function getRecallConjugations(w) {
+  var forms = getEffForms(w);
+  return RECALL_CONJUGATIONS.filter(function(f){return forms[f.key] && forms[f.key].indexOf("?")<0;}).map(function(f){
+    return {key:f.key,label:f.label,answer:forms[f.key]};
+  });
+}
+function getRecallItems(w) {
+  var items = [{word:w, mode:"recognition"}];
+  if (w.meaning) items.push({word:w, mode:"production"});
+  if (w.reading && w.reading !== w.japanese) items.push({word:w, mode:"reading"});
+  var conj = getRecallConjugations(w);
+  if (conj.length) {
+    var pick = conj[Math.floor(Math.random()*conj.length)];
+    items.push({word:w, mode:"conjugation", form:pick});
+  }
+  return items;
+}
+function getQueueWord(item) {
+  return item && item.word ? item.word : item;
+}
+function recallForItem(item) {
+  var w = getQueueWord(item);
+  var mode = item && item.mode ? item.mode : "recognition";
+  var meta = RECALL_MODES[mode] || RECALL_MODES.recognition;
+  if (mode === "production") {
+    return {mode:mode,label:meta.label,question:meta.question,front:w.meaning,frontClass:"",answer:w.japanese,answerClass:"",context:w.reading||""};
+  }
+  if (mode === "reading") {
+    return {mode:mode,label:meta.label,question:meta.question,front:w.japanese,frontClass:"jp",answer:w.reading,answerClass:"",context:w.meaning||""};
+  }
+  if (mode === "conjugation") {
+    var form = item.form || getRecallConjugations(w)[0] || {label:"Form",answer:""};
+    return {mode:mode,label:meta.label,question:"Make this form",targetLabel:form.label,front:w.japanese,frontClass:"jp",frontSub:w.meaning||"",answer:form.answer,answerClass:"",context:w.reading||""};
+  }
+  return {mode:"recognition",label:meta.label,question:meta.question,front:w.japanese,frontClass:"jp",answer:w.meaning,answerClass:"en",context:w.reading||""};
+}
+function buildRecallQueue(words) {
+  var out = words.map(function(w){
+    var items = getRecallItems(w);
+    return items[Math.floor(Math.random()*items.length)] || {word:w, mode:"recognition"};
+  });
+  return out.sort(function(a,b){
+    var aw=getQueueWord(a), bw=getQueueWord(b);
+    return getSRS(aw.id).box-getSRS(bw.id).box || Math.random()-.5;
+  });
+}
+
+// ---- AUDIO ----
+function speakJapanese(text){
+  if(!text||!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang="ja-JP";u.rate=0.9;
+  window.speechSynthesis.speak(u);
+}
+
+// ---- SRS: Leitner 5-box ----
+var SRS_INTERVALS=[0,1,2,4,8,16];
+function todayStr() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, "0");
+  var day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+function getSRS(id) {
+  var s = scores[String(id)] || {};
+  return {
+    box: s.box != null ? s.box : 1,
+    nextDue: s.nextDue || todayStr(),
+    known: s.known || 0,
+    learning: s.learning || 0
+  };
+}
+function advanceSRS(id, knew) {
+  var s = getSRS(id);
+  var box = knew ? Math.min(s.box + 1, 5) : 1;
+  var due = new Date();
+  due.setDate(due.getDate() + (SRS_INTERVALS[box] || 1));
+  var y = due.getFullYear();
+  var m = String(due.getMonth() + 1).padStart(2, "0");
+  var day = String(due.getDate()).padStart(2, "0");
+  scores[String(id)] = {
+    box: box,
+    nextDue: y + "-" + m + "-" + day,
+    known: s.known + (knew ? 1 : 0),
+    learning: s.learning + (knew ? 0 : 1)
+  };
+}
+function advanceSRSAuto(id, result) {
+  var s = getSRS(id), box = s.box;
+  if (result === "again") box = 1;
+  else if (result === "hard") box = Math.max(1, box);
+  else if (result === "good") box = Math.min(box + 1, 5);
+  else if (result === "easy") box = Math.min(box + 2, 5);
+  var due = new Date();
+  var wait;
+  if (result === "again") wait = 1;
+  else if (result === "hard") wait = Math.max(1, Math.floor((SRS_INTERVALS[box] || 1) / 2));
+  else wait = SRS_INTERVALS[box] || 1;
+  due.setDate(due.getDate() + wait);
+  var y = due.getFullYear();
+  var m = String(due.getMonth() + 1).padStart(2, "0");
+  var day = String(due.getDate()).padStart(2, "0");
+  var knew = result !== "again";
+  scores[String(id)] = {
+    box: box,
+    nextDue: y + "-" + m + "-" + day,
+    known: s.known + (knew ? 1 : 0),
+    learning: s.learning + (knew ? 0 : 1)
+  };
+}
+function dueCount(pool){var t=todayStr();return pool.filter(function(w){return getSRS(w.id).nextDue<=t;}).length;}
+function dueTomorrow(pool) {
+  var tom = new Date();
+  tom.setDate(tom.getDate() + 1);
+  var y = tom.getFullYear();
+  var m = String(tom.getMonth() + 1).padStart(2, "0");
+  var day = String(tom.getDate()).padStart(2, "0");
+  var ts = y + "-" + m + "-" + day;
+  var t = todayStr();
+  return pool.filter(function(w) {
+    var nd = getSRS(w.id).nextDue;
+    return nd > t && nd <= ts;
+  });
+}
+
 // ---- DEFAULT DATA ----
 var DEFAULT_VOCAB = [
-  {id:1,japanese:"\u98DF\u3079\u308B",reading:"\u305F\u3079\u308B",meaning:"to eat",type:"verb-ru",overrides:{}},
-  {id:2,japanese:"\u98F2\u3080",reading:"\u306E\u3080",meaning:"to drink",type:"verb-u",overrides:{}},
-  {id:3,japanese:"\u884C\u304F",reading:"\u3044\u304F",meaning:"to go",type:"verb-u",overrides:{}},
-  {id:4,japanese:"\u6765\u308B",reading:"\u304F\u308B",meaning:"to come",type:"verb-irr",overrides:{}},
-  {id:5,japanese:"\u3059\u308B",reading:"\u3059\u308B",meaning:"to do",type:"verb-irr",overrides:{}},
-  {id:6,japanese:"\u5ACC\u3044",reading:"\u304D\u3089\u3044",meaning:"disliked / hate",type:"i-adj",overrides:{}},
-  {id:7,japanese:"\u9759\u304B",reading:"\u3057\u305A\u304B",meaning:"quiet",type:"na-adj",overrides:{}},
-  {id:8,japanese:"\u96FB\u8ECA",reading:"\u3067\u3093\u3057\u3083",meaning:"train",type:"noun",overrides:{}},
-  {id:9,japanese:"\u96E3\u3057\u3044",reading:"\u3080\u305A\u304B\u3057\u3044",meaning:"difficult",type:"i-adj",overrides:{}},
-  {id:10,japanese:"\u52C9\u5F37\u3059\u308B",reading:"\u3079\u3093\u304D\u3087\u3046\u3059\u308B",meaning:"to study",type:"verb-irr",overrides:{}}
+  {id:1,japanese:"\u98DF\u3079\u308B",reading:"\u305F\u3079\u308B",meaning:"to eat",type:"verb-ru",overrides:{},collocations:[]},
+  {id:2,japanese:"\u98F2\u3080",reading:"\u306E\u3080",meaning:"to drink",type:"verb-u",overrides:{},collocations:[]},
+  {id:3,japanese:"\u884C\u304F",reading:"\u3044\u304F",meaning:"to go",type:"verb-u",overrides:{},collocations:[]},
+  {id:4,japanese:"\u6765\u308B",reading:"\u304F\u308B",meaning:"to come",type:"verb-irr",overrides:{},collocations:[]},
+  {id:5,japanese:"\u3059\u308B",reading:"\u3059\u308B",meaning:"to do",type:"verb-irr",overrides:{},collocations:[]},
+  {id:6,japanese:"\u5ACC\u3044",reading:"\u304D\u3089\u3044",meaning:"disliked / hate",type:"na-adj",overrides:{},collocations:[]},
+  {id:7,japanese:"\u9759\u304B",reading:"\u3057\u305A\u304B",meaning:"quiet",type:"na-adj",overrides:{},collocations:[]},
+  {id:8,japanese:"\u96FB\u8ECA",reading:"\u3067\u3093\u3057\u3083",meaning:"train",type:"noun",overrides:{},collocations:[]},
+  {id:9,japanese:"\u96E3\u3057\u3044",reading:"\u3080\u305A\u304B\u3057\u3044",meaning:"difficult",type:"i-adj",overrides:{},collocations:[]},
+  {id:10,japanese:"\u52C9\u5F37\u3059\u308B",reading:"\u3079\u3093\u304D\u3087\u3046\u3059\u308B",meaning:"to study",type:"verb-irr",overrides:{},collocations:[]}
 ];
 
 // ---- STATE ----
 var vocab=[], scores={}, queue=[], qIdx=0, flipped=false;
 var activeTab="review", filterType="all", searchQ="";
 var sessionDone=false, sessionKnown=0, sessionLearning=0;
+var reviewStartedAt=0, answerStartedAt=0, autoAnswered=false;
 var addState={japanese:"",reading:"",meaning:"",type:"noun"};
 var modalMode=null, editId=null, editOpenGroups={};
 var STORAGE_KEY="poketto_v2";
@@ -340,21 +629,81 @@ function esc(v) {
   });
 }
 function escAttr(v) { return esc(v); }
+function kanaFormFromReading(w, answer) {
+  if (!w || !w.reading || !w.japanese || !answer) return "";
+  return String(answer).replace(String(w.japanese), String(w.reading));
+}
+function normalizeAnswer(v) {
+  return String(v || "")
+    .trim()
+    .replace(/[\s\u3000。、，．.・･]/g, "")
+    .replace(/[！!？?]/g, "");
+}
+function getAcceptedAnswers(item, recall) {
+  var w = getQueueWord(item);
+  var answers = [recall.answer];
+  var kanaAnswer = kanaFormFromReading(w, recall.answer);
+  if (kanaAnswer && kanaAnswer !== recall.answer) answers.push(kanaAnswer);
+  return answers.map(normalizeAnswer).filter(Boolean);
+}
+function isAnswerCorrect(input, item, recall) {
+  var user = normalizeAnswer(input);
+  return !!user && getAcceptedAnswers(item, recall).indexOf(user) >= 0;
+}
+function normalizeId(id, index) {
+  if (id != null && id !== "") {
+    var n = Number(id);
+    if (!isNaN(n) && isFinite(n) && String(n) === String(id)) {
+      return n;
+    }
+    return String(id);
+  }
+  return Date.now() + (index || 0);
+}
+function wordIdFromDataset(raw) {
+  return Number(raw);
+}
 function normalizeWord(w, index) {
+  var japanese = String(w.japanese || "").trim();
+  var type = correctAdjectiveType(japanese, TYPE_LABELS[w.type] ? w.type : "noun");
+  var overrides = Object.assign({}, w.overrides && typeof w.overrides === "object" ? w.overrides : {});
+  if (type !== w.type && w.type === "i-adj") {
+    var oldForms = generateForms(japanese, w.type);
+    var newForms = conjugate(japanese, type);
+    Object.keys(overrides).forEach(function(key) {
+      // Discard obsolete form keys and saved copies of the incorrect auto forms.
+      // Preserve custom overrides that still apply to the corrected word type.
+      if (!(key in newForms) || overrides[key] === oldForms[key]) delete overrides[key];
+    });
+  }
   return {
-    id: w.id || Date.now() + (index || 0),
-    japanese: String(w.japanese || "").trim(),
+    id: normalizeId(w.id, index),
+    japanese: japanese,
     reading: String(w.reading || "").trim(),
     meaning: String(w.meaning || "").trim(),
-    type: TYPE_LABELS[w.type] ? w.type : "noun",
-    overrides: w.overrides && typeof w.overrides === "object" ? w.overrides : {}
+    type: type,
+    overrides: overrides,
+    collocations: Array.isArray(w.collocations) ? w.collocations.map(function(c){return{japanese:String(c.japanese||"").trim(),gloss:String(c.gloss||"").trim()};}).filter(function(c){return c.japanese;}) : []
   };
 }
 function normalizePayload(d) {
   var next = d && typeof d === "object" ? d : {};
   var words = Array.isArray(next.vocab) ? next.vocab : DEFAULT_VOCAB;
-  var cleanWords = words.map(normalizeWord).filter(function(w){return w.japanese && w.meaning;});
-  return {version:DATA_VERSION,vocab:cleanWords,scores:next.scores && typeof next.scores==="object" ? next.scores : {}};
+  var idMap = {};
+  var cleanWords = words.map(function(w, i) {
+    var normalized = normalizeWord(w, i);
+    if (w.id != null && w.id !== "") {
+      idMap[String(w.id)] = normalized.id;
+    }
+    return normalized;
+  }).filter(function(w){return w.japanese && w.meaning;});
+  var rawScores = next.scores && typeof next.scores === "object" ? next.scores : {};
+  var normScores = {};
+  Object.keys(rawScores).forEach(function(k) {
+    var normalizedKey = idMap[k] !== undefined ? idMap[k] : String(Number(k) || k);
+    normScores[String(normalizedKey)] = rawScores[k];
+  });
+  return {version: DATA_VERSION, vocab: cleanWords, scores: normScores};
 }
 function makeBackupPayload() {
   return {app:"Poketto",version:DATA_VERSION,exportedAt:new Date().toISOString(),vocab:vocab,scores:scores};
@@ -364,28 +713,32 @@ function load() {
   try {
     var d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
     if(d){d=normalizePayload(d);vocab=d.vocab;scores=d.scores;}else{vocab=JSON.parse(JSON.stringify(DEFAULT_VOCAB));scores={};}
-    vocab.forEach(function(w){if(!w.overrides)w.overrides={};});
+    vocab.forEach(function(w){if(!w.overrides)w.overrides={};if(!Array.isArray(w.collocations))w.collocations=[];});
   }catch(e){vocab=JSON.parse(JSON.stringify(DEFAULT_VOCAB));scores={};}
 }
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:DATA_VERSION,vocab:vocab,scores:scores}));}catch(e){}}
 
-function buildQueue(){
-  var pool=filterType==="all"?vocab:vocab.filter(function(w){return w.type===filterType;});
-  queue=pool.slice().sort(function(){return Math.random()-.5;});
-  qIdx=0;flipped=false;sessionDone=false;sessionKnown=0;sessionLearning=0;
+function buildQueue() {
+  var pool = filterType === "all" ? vocab : vocab.filter(function(w) { return w.type === filterType; });
+  var t = todayStr();
+  var due = pool.filter(function(w) { return getSRS(w.id).nextDue <= t; });
+  queue = buildRecallQueue(due);
+  qIdx = 0;
+  flipped = false;
+  sessionDone = false;
+  sessionKnown = 0;
+  sessionLearning = 0;
 }
 
 // ---- RENDER ----
-function updateSub(){
-  var learned=Object.values(scores).filter(function(s){return s.known>=1;}).length;
-  document.getElementById("header-sub").textContent=vocab.length+" words \u00B7 "+learned+" learned";
-}
+function updateSub(){var learned=Object.values(scores).filter(function(s){return s.known>=1;}).length;var pool=filterType==="all"?vocab:vocab.filter(function(w){return w.type===filterType;});var due=dueCount(pool);var sub=vocab.length+" words · "+learned+" learned";if(due>0)sub+=" · "+due+" due";document.getElementById("header-sub").textContent=sub;}
 function render(){
   updateSub();
   document.querySelectorAll(".nav-btn").forEach(function(btn){btn.classList.toggle("active",btn.dataset.tab===activeTab);});
   var el=document.getElementById("main-content");
   el.innerHTML=activeTab==="review"?renderReview():(activeTab==="words"?renderWords():renderSettings());
   attachHandlers();
+  if(activeTab==="words")renderWordsList();
 }
 
 function renderFilterRow(){
@@ -396,6 +749,8 @@ function renderFilterRow(){
   return '<div class="filter-row">'+all+chips+'</div>';
 }
 
+
+// collocations now rendered inline on card back
 // ---- REVIEW ----
 function renderFormsPanel(w, visible){
   var groups=getGroups(w.type);
@@ -407,11 +762,35 @@ function renderFormsPanel(w, visible){
     var filled=g.forms.filter(function(f){return ef[f.key];});
     if(!filled.length)return "";
     var open=gi===0;
-    return '<div><div class="fg-header" data-rg="'+gi+'"><span class="fg-title">'+g.label+'</span><span class="fg-arrow '+(open?"open":"")+'">&#9654;</span></div>'
-      +'<div class="fg-body '+(open?"open":"")+'">'+filled.map(function(f){
+    var body="";
+    if(g.grid){
+      // 2-col plain/polite grid
+      var plain=filled.filter(function(f){return f.col==="plain";});
+      var polite=filled.filter(function(f){return f.col==="polite";});
+      var maxRows=Math.max(plain.length,polite.length);
+      body='<div class="forms-grid">'
+        +'<div class="forms-grid-hd plain">Plain</div><div class="forms-grid-hd polite">Polite</div>';
+      for(var i=0;i<maxRows;i++){
+        var lf=plain[i],rf=polite[i];
+        var led=lf&&w.overrides&&w.overrides[lf.key]?'<span class="edited-badge">edited</span>':"";
+        var red=rf&&w.overrides&&w.overrides[rf.key]?'<span class="edited-badge">edited</span>':"";
+        body+='<div class="forms-grid-cell plain">'+(lf?'<div class="forms-grid-lbl">'+esc(lf.label)+'</div><div class="forms-grid-val">'+esc(ef[lf.key]||"")+led+'</div>':"")+'</div>';
+        body+='<div class="forms-grid-cell polite">'+(rf?'<div class="forms-grid-lbl">'+esc(rf.label)+'</div><div class="forms-grid-val">'+esc(ef[rf.key]||"")+red+'</div>':"")+'</div>';
+      }
+      body+='</div>';
+    } else {
+      body='<div class="fg-body '+(open?"open":"")+'">'+filled.map(function(f){
         var edited=w.overrides&&w.overrides[f.key]?'<span class="edited-badge">edited</span>':"";
         return '<div class="form-row"><div class="form-lbl">'+esc(f.label)+'</div><div class="form-val">'+esc(ef[f.key])+edited+'</div></div>';
-      }).join("")+'</div></div>';
+      }).join("")+'</div>';
+    }
+    return '<div>'
+      +'<div class="fg-header" data-rg="'+gi+'">'
+        +'<span class="fg-title">'+g.label+'</span>'
+        +(g.grid?'':'<span class="fg-arrow '+(open?"open":"")+'">&#9654;</span>')
+      +'</div>'
+      +body
+    +'</div>';
   }).join("");
   return '<div class="forms-panel '+(visible?"visible":"")+'" id="forms-panel">'+inner+'</div>';
 }
@@ -420,11 +799,31 @@ function renderReview(){
   var pool=filterType==="all"?vocab:vocab.filter(function(w){return w.type===filterType;});
   var fr=renderFilterRow();
   if(!pool.length)return fr+'<div class="empty"><div class="empty-char">&#31354;</div><div class="empty-text">No words in this category.</div></div>';
-  if(sessionDone)return fr+'<div class="done-screen"><div class="done-kanji">&#23436;&#20102;</div><div class="done-label">Session complete</div><div class="done-stats"><div class="done-stat"><div class="done-num">'+sessionKnown+'</div><div class="done-stat-label">Knew it</div></div><div class="done-stat"><div class="done-num">'+sessionLearning+'</div><div class="done-stat-label">Learning</div></div></div><button class="btn-primary" style="max-width:200px;margin:0 auto" id="restart-btn">Review again</button></div>';
+  if(sessionDone){
+    var tom=dueTomorrow(pool);
+    return fr+'<div class="done-screen"><div class="done-kanji">&#23436;&#20102;</div><div class="done-label">Session complete</div>'
+      +'<div class="done-stats"><div class="done-stat"><div class="done-num">'+sessionKnown+'</div><div class="done-stat-label">Knew it</div></div>'
+      +'<div class="done-stat"><div class="done-num">'+sessionLearning+'</div><div class="done-stat-label">Learning</div></div></div>'
+      +(tom>0?'<div style="font-size:11px;color:var(--muted);margin-bottom:20px">'+tom+' word'+(tom>1?"s":"")+" due tomorrow</div>":"")
+      +'<button class="btn-primary" style="max-width:200px;margin:0 auto" id="restart-btn">Review again</button></div>';
+  }
   if(!queue.length)buildQueue();
-  var card=queue[qIdx];
-  if(!card){buildQueue();return renderReview();}
+  if(!queue.length){
+    var tom2=dueTomorrow(pool);
+    return fr+'<div class="done-screen"><div class="done-kanji" style="font-size:40px">&#128218;</div>'
+      +'<div class="done-label" style="margin-bottom:12px">All caught up</div>'
+      +'<div style="font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:28px">No cards due right now.'+(tom2>0?' '+tom2+' word'+(tom2>1?"s":"")+" due tomorrow.":"")+'</div>'
+      +'<button class="btn-primary" style="max-width:220px;margin:0 auto" id="restart-btn">Review all anyway</button></div>';
+  }
+  var item=queue[qIdx];
+  var card=getQueueWord(item);
+  var recall=recallForItem(item);
+  var autoCheck=recall.mode==="conjugation";
+  reviewStartedAt=Date.now();
+  answerStartedAt=0;
+  autoAnswered=false;
   var color=TYPE_COLORS[card.type]||"#999";
+  var srs=getSRS(card.id);
   var segs=queue.map(function(_,i){return '<div class="progress-seg '+(i<qIdx?"done":i===qIdx?"current":"")+'"></div>';}).join("");
   return fr
     +'<div class="progress-bar">'+segs+'</div>'
@@ -432,59 +831,85 @@ function renderReview(){
       +'<div class="card-inner '+(flipped?"flipped":"")+'" id="card-inner">'
         +'<div class="card-face card-front">'
           +'<div class="card-type-label" style="color:'+color+'">'+TYPE_LABELS[card.type]+'</div>'
-          +'<div class="card-jp">'+esc(card.japanese)+'</div>'
-          +'<div class="flip-hint" id="flip-hint">Tap to reveal</div>'
+          +'<div class="recall-mode">'+esc(recall.label)+'</div>'
+          +'<div class="recall-question">'+esc(recall.question)+'</div>'
+          +(recall.targetLabel?'<div class="conj-target">'+esc(recall.targetLabel)+'</div>':"")
+          +'<div class="recall-front-text '+escAttr(recall.frontClass||"")+'">'+esc(recall.front)+'</div>'
+          +(recall.frontSub?'<div class="recall-front-sub">'+esc(recall.frontSub)+'</div>':"")
+          +(autoCheck?'<div class="answer-panel">'
+            +'<input class="answer-input" id="answer-input" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type the form" />'
+            +'<div class="answer-actions"><button class="answer-btn reveal" id="answer-reveal">Reveal</button><button class="answer-btn check" id="answer-check">Check</button></div>'
+            +'<div class="answer-feedback" id="answer-feedback"></div>'
+          +'</div>':"")
+          
+          +'<button class="speak-btn" style="position:absolute;bottom:10px;left:14px" id="speak-front"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="#1A1A1A" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="#1A1A1A" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="#1A1A1A" stroke-width="1.2" stroke-linecap="round"/></svg></button>'
+          +(autoCheck?"":'<div class="flip-hint" id="flip-hint">Tap to reveal</div>')
         +'</div>'
         +'<div class="card-face card-back">'
           +'<div class="card-type-label" style="color:'+color+'">'+TYPE_LABELS[card.type]+'</div>'
-          +'<div class="card-reading">'+esc(card.reading||"")+'</div>'
-          +'<div class="card-meaning" style="margin-top:10px">'+esc(card.meaning)+'</div>'
+          +'<div class="recall-mode">'+esc(recall.label)+'</div>'
+          +'<div class="recall-answer-label">Answer</div>'
+          +'<div class="recall-answer '+escAttr(recall.answerClass||"")+'">'+esc(recall.answer)+'</div>'
+          +(autoCheck?'<div class="auto-result" id="auto-result"></div>':"")
+          +(recall.context?'<div class="recall-context">'+esc(recall.context)+'</div>':"")
+          +(card.collocations&&card.collocations.length?'<div class="card-colloc">'+card.collocations.map(function(c){return '<div class="card-colloc-row"><span class="card-colloc-jp">'+esc(c.japanese)+'</span>'+(c.gloss?'<span class="card-colloc-gl">'+esc(c.gloss)+'</span>':"")+'</div>';}).join("")+'</div>':"")
+          +'<button class="speak-btn" style="position:absolute;bottom:10px;right:14px" id="speak-back"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 5.5H1.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5H3l3.5 3V2.5L3 5.5Z" stroke="#C8A96E" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 5.5a3 3 0 0 1 0 5" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/><path d="M11.5 3.5a5.5 5.5 0 0 1 0 9" stroke="#C8A96E" stroke-width="1.2" stroke-linecap="round"/></svg></button>'
         +'</div>'
       +'</div>'
     +'</div>'
-    +renderFormsPanel(card,flipped)
-    +'<div class="grade-row '+(flipped?"":"hidden")+'">'
+    +(autoCheck?'<div class="grade-row '+(flipped?"":"hidden")+'"><button class="btn btn-known" id="next-card">Next</button></div>':'<div class="grade-row '+(flipped?"":"hidden")+'">'
       +'<button class="btn btn-learning" id="grade-learning">Still learning</button>'
       +'<button class="btn btn-known" id="grade-known">Knew it</button>'
-    +'</div>'
+    +'</div>')
     +'<div class="session-counter">'+(qIdx+1)+' / '+queue.length+'</div>';
 }
 
 // ---- WORDS ----
 function renderWords(){
-  var fr=renderFilterRow();
+  return renderFilterRow()
+    +'<div class="search-wrap"><span class="search-icon">&#128269;</span>'
+      +'<input class="search-input" id="search-input" placeholder="Search words…" autocomplete="off" autocorrect="off" autocapitalize="off" />'
+      +'<button class="search-clear" id="search-clear">&#x2715;</button>'
+    +'</div>'
+    +'<div id="words-list"></div>';
+}
+function renderWordsList(){
+  var si=document.getElementById("search-input");
+  var q=si?si.value:"";
+  var sc=document.getElementById("search-clear");
+  if(sc)sc.classList.toggle("visible",q.length>0);
   var pool=filterType==="all"?vocab.slice():vocab.filter(function(w){return w.type===filterType;});
-  if(searchQ){
-    var q=searchQ.toLowerCase();
-    pool=pool.filter(function(w){return w.japanese.indexOf(searchQ)>=0||(w.reading&&w.reading.indexOf(searchQ)>=0)||w.meaning.toLowerCase().indexOf(q)>=0;});
-  }
-  var searchBar='<div class="search-wrap"><span class="search-icon">&#128269;</span><input class="search-input" id="search-input" placeholder="Search words\u2026" value="'+escAttr(searchQ)+'" />'
-    +'<button class="search-clear '+(searchQ?"visible":"")+'" id="search-clear">&#x2715;</button></div>';
-  if(!pool.length){
-    var msg=searchQ?"No matches for \u201C"+esc(searchQ)+"\u201D":"No words yet.";
-    return fr+searchBar+'<div class="no-results">'+msg+'</div>';
-  }
+  if(q){var ql=q.toLowerCase();pool=pool.filter(function(w){return w.japanese.indexOf(q)>=0||(w.reading&&w.reading.indexOf(q)>=0)||w.meaning.toLowerCase().indexOf(ql)>=0;});}
+  var container=document.getElementById("words-list");
+  if(!container)return;
+  if(!pool.length){container.innerHTML='<div class="no-results">'+(q?"No matches for “"+esc(q)+"”":"No words yet.")+'</div>';attachWordRowHandlers();return;}
   var grouped={};
   pool.forEach(function(w){if(!grouped[w.type])grouped[w.type]=[];grouped[w.type].push(w);});
-  var html=fr+searchBar;
+  var html="";
   ALL_TYPES.forEach(function(type){
     if(!grouped[type])return;
     html+='<div class="section-hd"><span class="type-dot" style="background:'+TYPE_COLORS[type]+'"></span>'+TYPE_LABELS[type]+'</div>';
     grouped[type].forEach(function(w){
-      var s=scores[w.id]||{},known=s.known||0,learning=s.learning||0;
+      var sr=getSRS(w.id),known=sr.known,learning=sr.learning;
       var edits=Object.keys(w.overrides||{}).length;
+      var boxLabel="";
       html+='<div class="word-row" data-edit="'+w.id+'">'
         +'<div style="flex:1;min-width:0">'
-          +'<div class="word-jp">'+esc(w.japanese)+'<span class="word-kana">'+esc(w.reading||"")+'</span></div>'
+          +'<div class="word-jp">'+esc(w.japanese)+boxLabel+'<span class="word-kana">'+esc(w.reading||"")+'</span></div>'
           +'<div class="word-meaning">'+esc(w.meaning)+'</div>'
           +(edits>0?'<div class="word-meta">'+edits+' edited form'+(edits>1?"s":"")+'</div>':"")
         +'</div>'
-        +((known>0||learning>0)?'<div class="recall-pill">&#10003;'+known+' &#10007;'+learning+'</div>':"")
+
         +'<button class="del-btn" data-del="'+w.id+'">&#x2715;</button>'
       +'</div>';
     });
   });
-  return html;
+  container.innerHTML=html;
+  attachWordRowHandlers();
+}
+function attachWordRowHandlers(){
+  document.querySelectorAll("[data-edit]").forEach(function(el){el.addEventListener("click",function(){openDetailModal(wordIdFromDataset(el.dataset.edit));});});
+  document.querySelectorAll("[data-del]").forEach(function(el){el.addEventListener("click",function(e){e.stopPropagation();var id=wordIdFromDataset(el.dataset.del);if(!confirm("Delete this word from Poketto?"))return;vocab=vocab.filter(function(w){return w.id!==id;});delete scores[String(id)];save();updateSub();renderWordsList();});});
 }
 
 // ---- SETTINGS ----
@@ -589,7 +1014,8 @@ function saveAdd(){
   var reading=(document.getElementById("a-reading").value||"").trim();
   var meaning=(document.getElementById("a-meaning").value||"").trim();
   if(!jp||!meaning){alert("Japanese and meaning are required.");return;}
-  var savedType=addState.type;
+  if(vocab.some(function(w){return w.japanese===jp;})){if(!confirm("「"+jp+"」 is already in your vocabulary. Add it again?"))return;}
+  var savedType=correctAdjectiveType(jp,addState.type);
   vocab.push({id:Date.now(),japanese:jp,reading:reading,meaning:meaning,type:savedType,overrides:{}});
   save();
   addState={japanese:"",reading:"",meaning:"",type:"noun"};
@@ -602,10 +1028,12 @@ function saveAdd(){
 // ---- DETAIL / EDIT MODAL ----
 function openDetailModal(id){
   modalMode="edit";editId=id;editOpenGroups={};
-  var w=vocab.find(function(v){return v.id===id;});
+  var w=vocab.find(function(v){return String(v.id)===String(id);});
   if(!w)return;
   var color=TYPE_COLORS[w.type]||"#999";
-  document.getElementById("modal-title").innerHTML=esc(w.japanese)+(w.reading?' <span style="font-size:14px;color:var(--muted);font-family:\'Noto Serif JP\',serif">'+esc(w.reading)+'</span>':"");
+  document.getElementById("modal-title").innerHTML=esc(w.japanese)+(w.reading?' <span style="font-size:14px;color:var(--muted);font-family:\'Noto Serif JP\',serif">'+esc(w.reading)+'</span>':"")+'<button class="speak-btn" id="modal-speak" style="font-size:17px;margin-left:6px;vertical-align:middle">&#128264;</button>';
+  // wire speak after innerHTML set
+  setTimeout(function(){var ms=document.getElementById("modal-speak");if(ms)ms.addEventListener("click",function(){speakJapanese(w.japanese);});},0);
   document.getElementById("modal-subtitle").innerHTML='<span style="color:'+color+'">'+TYPE_LABELS[w.type]+'</span>';
   document.getElementById("modal-footer").innerHTML='<button class="btn-danger" id="modal-delete">Delete</button><button class="btn-save" id="modal-save-edit">Save changes</button>';
   renderDetailBody(w);
@@ -614,7 +1042,7 @@ function openDetailModal(id){
   document.getElementById("modal-delete").addEventListener("click",function(){
     if(!confirm("Delete this word from Poketto?"))return;
     vocab=vocab.filter(function(v){return v.id!==editId;});
-    delete scores[editId];
+    delete scores[String(editId)];
     save();closeModal();render();
   });
 }
@@ -623,10 +1051,12 @@ function renderDetailBody(w){
   var groups=getGroups(w.type);
   var autoForms=conjugate(w.japanese,w.type);
   var overrides=w.overrides||{};
+  var typeChips=ALL_TYPES.map(function(t){return '<button class="type-chip '+(w.type===t?"selected":"")+'" data-etype="'+t+'">'+TYPE_LABELS[t]+'</button>';}).join("");
   var html='<div class="detail-section">'
     +'<div style="margin-bottom:10px"><label class="dfl">Meaning</label><input class="dfi" id="e-meaning" value="'+escAttr(w.meaning)+'" /></div>'
     +'<div style="margin-bottom:10px"><label class="dfl">Reading</label><input class="dfi jp" id="e-reading" value="'+escAttr(w.reading||"")+'" /></div>'
-    +'<div><label class="dfl">Japanese</label><input class="dfi jp" id="e-jp" value="'+escAttr(w.japanese)+'" /></div>'
+    +'<div style="margin-bottom:10px"><label class="dfl">Japanese</label><input class="dfi jp" id="e-jp" value="'+escAttr(w.japanese)+'" /></div>'
+    +'<div><label class="dfl">Type</label><div class="type-chips">'+typeChips+'</div></div>'
     +'</div>';
   if(known>0||learning>0){
     html+='<div class="detail-section"><div class="dfl" style="margin-bottom:10px">Review history</div>'
@@ -638,9 +1068,33 @@ function renderDetailBody(w){
   if(groups.length){
     html+='<div class="fe-sec-hd"><span>Word forms</span><span class="auto-badge">&#9679; Auto-generated</span></div>';
     html+=groups.map(function(g,gi){
-      var open=!!editOpenGroups[gi];
-      return '<div class="fe-group"><div class="fe-gh" data-eg="'+gi+'"><span>'+g.label+'</span><span>'+(open?"\u25BE":"\u25B8")+'</span></div>'
-        +'<div class="fe-gb '+(open?"open":"")+'">'+g.forms.map(function(f){
+      var open=g.grid||!!editOpenGroups[gi];
+      if(g.grid){
+        // 2-col grid layout for core forms
+        var plain=g.forms.filter(function(f){return f.col==="plain";});
+        var polite=g.forms.filter(function(f){return f.col==="polite";});
+        var maxRows=Math.max(plain.length,polite.length);
+        var rows="";
+        for(var i=0;i<maxRows;i++){
+          var lf=plain[i],rf=polite[i];
+          var led=lf&&overrides[lf.key]?'<span class="edited-badge">edited</span>':"";
+          var red=rf&&overrides[rf.key]?'<span class="edited-badge">edited</span>':"";
+          var lfAuto=lf?autoForms[lf.key]||'':'';var lfOv=lf?overrides[lf.key]:undefined;var lfVal=lf?(lfOv!==undefined?lfOv:lfAuto):'';var lfEd=lf&&lfOv!==undefined&&lfOv!==lfAuto;
+          var rfAuto=rf?autoForms[rf.key]||'':'';var rfOv=rf?overrides[rf.key]:undefined;var rfVal=rf?(rfOv!==undefined?rfOv:rfAuto):'';var rfEd=rf&&rfOv!==undefined&&rfOv!==rfAuto;
+          rows+='<div class="forms-grid-cell plain">'+(lf?'<div class="forms-grid-lbl">'+esc(lf.label)+'</div>'+'<input class="fe-inp '+(lfEd?'edited':'auto')+'" data-fk="'+escAttr(lf.key)+'" data-auto="'+escAttr(lfAuto)+'" value="'+escAttr(lfVal)+'" placeholder="'+escAttr(lfAuto||lf.label)+'" />'+'<button class="fe-reset" style="visibility:'+(lfEd?'visible':'hidden')+'" data-rk="'+lf.key+'">&#x21BA;</button>':'')+'</div>';
+          rows+='<div class="forms-grid-cell polite">'+(rf?'<div class="forms-grid-lbl">'+esc(rf.label)+'</div>'+'<input class="fe-inp '+(rfEd?'edited':'auto')+'" data-fk="'+escAttr(rf.key)+'" data-auto="'+escAttr(rfAuto)+'" value="'+escAttr(rfVal)+'" placeholder="'+escAttr(rfAuto||rf.label)+'" />'+'<button class="fe-reset" style="visibility:'+(rfEd?'visible':'hidden')+'" data-rk="'+rf.key+'">&#x21BA;</button>':'')+'</div>';
+        }
+        return '<div class="fe-group">'
+          +'<div class="fe-gh">'
+            +'<span>'+g.label+' <span style="font-size:8px;color:var(--gold);font-weight:600;letter-spacing:1px">CORE</span></span>'
+          +'</div>'
+          +'<div class="forms-grid">'
+            +'<div class="forms-grid-hd plain">Plain</div><div class="forms-grid-hd polite">Polite</div>'
+            +rows
+          +'</div>'
+        +'</div>';
+      } else {
+        var rows=g.forms.map(function(f){
           var auto=autoForms[f.key]||"";
           var ov=overrides[f.key];
           var val=ov!==undefined?ov:auto;
@@ -650,10 +1104,56 @@ function renderDetailBody(w){
             +'<input class="fe-inp '+(isEdited?"edited":"auto")+'" data-fk="'+escAttr(f.key)+'" data-auto="'+escAttr(auto)+'" value="'+escAttr(val)+'" placeholder="'+escAttr(auto||f.label)+'" />'
             +'<button class="fe-reset" style="visibility:'+(isEdited?"visible":"hidden")+'" data-rk="'+f.key+'">&#x21BA;</button>'
           +'</div>';
-        }).join("")+'</div></div>';
+        }).join("");
+        return '<div class="fe-group">'
+          +'<div class="fe-gh" data-eg="'+gi+'">'
+            +'<span>'+g.label+'</span>'
+            +'<span>'+(open?"\u25BE":"\u25B8")+'</span>'
+          +'</div>'
+          +'<div class="fe-gb '+(open?"open":"")+'">'+rows+'</div>'
+        +'</div>';
+      }
     }).join("");
   }
+  // collocations editor
+  var colls=w.collocations||[];
+  var collHtml='<div class="fe-sec-hd"><span>Collocations</span><span style="font-size:9px;color:var(--muted);font-weight:400">shown on card back</span></div>'
+    +'<div id="colloc-editor" style="padding:4px 20px 0">';
+  colls.forEach(function(c,i){
+    collHtml+='<div class="colloc-edit-row" data-ci="'+i+'">'
+      +'<input class="colloc-inp-jp" data-ci="'+i+'" data-field="japanese" value="'+escAttr(c.japanese)+'" placeholder="e.g. \u96FB\u6c17\u3092\u3064\u3051\u308b" />'
+      +'<input class="colloc-inp-gl" data-ci="'+i+'" data-field="gloss" value="'+escAttr(c.gloss||"")+'" placeholder="e.g. to turn on the light" />'
+      +'<button class="colloc-rm" data-ci="'+i+'">&#x2715;</button>'
+    +'</div>';
+  });
+  collHtml+='</div><button class="colloc-add" id="colloc-add-btn">+ Add collocation</button>';
+  html+=collHtml;
   document.getElementById("modal-body").innerHTML=html;
+  // colloc add row
+  document.getElementById("colloc-add-btn").addEventListener("click",function(){
+    var ed=document.getElementById("colloc-editor");
+    var i=ed.querySelectorAll(".colloc-edit-row").length;
+    var row=document.createElement("div");
+    row.className="colloc-edit-row";row.dataset.ci=i;
+    row.innerHTML='<input class="colloc-inp-jp" data-ci="'+i+'" data-field="japanese" placeholder="e.g. \u96FB\u6c17\u3092\u3064\u3051\u308b" />'
+      +'<input class="colloc-inp-gl" data-ci="'+i+'" data-field="gloss" placeholder="e.g. to turn on the light" />'
+      +'<button class="colloc-rm" data-ci="'+i+'">&#x2715;</button>';
+    ed.appendChild(row);
+    attachCollocHandlers();
+    row.querySelector(".colloc-inp-jp").focus();
+  });
+  attachCollocHandlers();
+  // type chips
+  document.querySelectorAll("[data-etype]").forEach(function(el){
+    el.addEventListener("click",function(){
+      var w=vocab.find(function(v){return String(v.id)===String(editId);});
+      if(w){
+        w.type=correctAdjectiveType(w.japanese,el.dataset.etype);
+        w.overrides={}; // clear overrides when type changes
+        renderDetailBody(w);
+      }
+    });
+  });
   // accordions
   document.querySelectorAll("[data-eg]").forEach(function(el){
     el.addEventListener("click",function(){
@@ -682,50 +1182,116 @@ function renderDetailBody(w){
   });
 }
 function saveEdit(){
-  var w=vocab.find(function(v){return v.id===editId;});
+  var w=vocab.find(function(v){return String(v.id)===String(editId);});
   if(!w)return;
   var newJp=(document.getElementById("e-jp").value||"").trim()||w.japanese;
   w.meaning=(document.getElementById("e-meaning").value||"").trim()||w.meaning;
   w.reading=(document.getElementById("e-reading").value||"").trim();
+  // type is already updated by the chip click handler
   if(newJp!==w.japanese){w.japanese=newJp;w.overrides={};}
   else{w.japanese=newJp;}
+  var previousType=w.type;
+  var corrected=normalizeWord(w);
+  w.type=corrected.type;w.overrides=corrected.overrides;
   var autoForms=conjugate(w.japanese,w.type);
   document.querySelectorAll(".fe-inp[data-fk]").forEach(function(inp){
+    if(previousType!==w.type)return;
     var key=inp.dataset.fk,auto=autoForms[key]||"",val=inp.value.trim();
-    if(val&&val!==auto)w.overrides[key]=val;else delete w.overrides[key];
+    if(key in autoForms && val&&val!==auto)w.overrides[key]=val;else delete w.overrides[key];
   });
+  // collect collocations
+  var newCollocs=[];
+  document.querySelectorAll(".colloc-edit-row").forEach(function(row){
+    var jp=(row.querySelector(".colloc-inp-jp")||{}).value||"";
+    var gl=(row.querySelector(".colloc-inp-gl")||{}).value||"";
+    jp=jp.trim();gl=gl.trim();
+    if(jp)newCollocs.push({japanese:jp,gloss:gl});
+  });
+  w.collocations=newCollocs;
   save();closeModal();render();
 }
 
-function closeModal(){
-  document.getElementById("modal-overlay").classList.add("hidden");
-  modalMode=null;editId=null;editOpenGroups={};
-}
+function closeModal(){document.getElementById("modal-overlay").classList.add("hidden");modalMode=null;editId=null;editOpenGroups={};if(activeTab==="words"&&document.getElementById("words-list")){renderWordsList();updateSub();}}
 
 // ---- GRADE ----
-function grade(known){
-  var card=queue[qIdx];
-  var prev=scores[card.id]||{known:0,learning:0};
-  scores[card.id]=known?{known:prev.known+1,learning:prev.learning}:{known:prev.known,learning:prev.learning+1};
-  if(known)sessionKnown++;else sessionLearning++;
+function grade(known){var card=getQueueWord(queue[qIdx]);advanceSRS(card.id,known);if(known)sessionKnown++;else sessionLearning++;save();if(qIdx+1>=queue.length){sessionDone=true;flipped=false;render();}else{qIdx++;flipped=false;render();}}
+function autoGrade(result,label){
+  if(autoAnswered)return;
+  var item=queue[qIdx], card=getQueueWord(item);
+  autoAnswered=true;
+  advanceSRSAuto(card.id,result);
+  if(result==="again")sessionLearning++;else sessionKnown++;
   save();
+  var ar=document.getElementById("auto-result");if(ar)ar.textContent=label||"";
+  flipped=true;
+  var ci=document.getElementById("card-inner");if(ci)ci.classList.add("flipped");
+  var fp=document.getElementById("forms-panel");if(fp)fp.classList.add("visible");
+  var gr=document.querySelector(".grade-row");if(gr)gr.classList.remove("hidden");
+}
+function nextReviewCard(){
   if(qIdx+1>=queue.length){sessionDone=true;flipped=false;render();}
   else{qIdx++;flipped=false;render();}
 }
+function checkTypedAnswer(){
+  var item=queue[qIdx], recall=recallForItem(item), input=document.getElementById("answer-input"), fb=document.getElementById("answer-feedback");
+  if(!input||!fb)return;
+  var elapsed=(Date.now()-(answerStartedAt||Date.now()))/1000;
+  if(isAnswerCorrect(input.value,item,recall)){
+    var result=elapsed<=6?"easy":(elapsed<=18?"good":"hard");
+    fb.className="answer-feedback correct";
+    fb.textContent="Correct · "+(result==="easy"?"Easy":result==="good"?"Good":"Hard")+" · "+elapsed.toFixed(1)+"s";
+    autoGrade(result,"Correct · "+(result==="easy"?"Easy":result==="good"?"Good":"Hard")+" · "+elapsed.toFixed(1)+"s");
+  }else{
+    fb.className="answer-feedback wrong";
+    fb.textContent="Not yet. Try again, or reveal the answer.";
+    input.select();
+  }
+}
+function revealTypedAnswer(){
+  var fb=document.getElementById("answer-feedback");
+  if(fb){fb.className="answer-feedback wrong";fb.textContent="Revealed · Again";}
+  autoGrade("again","Revealed · Again");
+}
 
+
+function attachCollocHandlers(){
+  document.querySelectorAll(".colloc-rm").forEach(function(btn){
+    btn.onclick=function(){btn.closest(".colloc-edit-row").remove();};
+  });
+}
 // ---- ATTACH HANDLERS ----
 function attachHandlers(){
   document.querySelectorAll("[data-filter]").forEach(function(el){
-    el.addEventListener("click",function(){filterType=el.dataset.filter;buildQueue();render();});
+    el.addEventListener("click",function(){
+      var prevFilter=filterType;
+      filterType=el.dataset.filter;
+      // Rebuild queue when filter changes in review mode
+      if(activeTab==="review"&&prevFilter!==filterType)buildQueue();
+      render();
+    });
   });
   var cw=document.getElementById("card-wrap");
   if(cw)cw.addEventListener("click",function(){
+    var item=queue[qIdx], recall=item?recallForItem(item):null;
+    if(recall&&recall.mode==="conjugation")return;
     flipped=!flipped;
     var ci=document.getElementById("card-inner");if(ci)ci.classList.toggle("flipped",flipped);
     var fp=document.getElementById("forms-panel");if(fp)fp.classList.toggle("visible",flipped);
     var gr=document.querySelector(".grade-row");if(gr)gr.classList.toggle("hidden",!flipped);
     var fh=document.getElementById("flip-hint");if(fh)fh.style.display=flipped?"none":"";
   });
+  var ai=document.getElementById("answer-input");
+  if(ai){ai.focus();ai.addEventListener("click",function(e){e.stopPropagation();});ai.addEventListener("input",function(){if(!answerStartedAt&&ai.value.trim())answerStartedAt=Date.now();});ai.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();checkTypedAnswer();}});}
+  var ac=document.getElementById("answer-check");if(ac)ac.addEventListener("click",function(e){e.stopPropagation();checkTypedAnswer();});
+  var ar=document.getElementById("answer-reveal");if(ar)ar.addEventListener("click",function(e){e.stopPropagation();revealTypedAnswer();});
+  var nc=document.getElementById("next-card");if(nc)nc.addEventListener("click",function(){nextReviewCard();});
+  // speak buttons
+  var card=getQueueWord(queue[qIdx]);
+  var sf=document.getElementById("speak-front");
+  if(sf&&card)sf.addEventListener("click",function(e){e.stopPropagation();speakJapanese(card.japanese);});
+  var sb=document.getElementById("speak-back");
+  if(sb&&card)sb.addEventListener("click",function(e){e.stopPropagation();speakJapanese(card.japanese);});
+
   document.querySelectorAll("[data-rg]").forEach(function(el){
     el.addEventListener("click",function(){
       var body=el.nextElementSibling,arrow=el.querySelector(".fg-arrow");
@@ -734,29 +1300,12 @@ function attachHandlers(){
   });
   var gk=document.getElementById("grade-known");if(gk)gk.addEventListener("click",function(){grade(true);});
   var gl=document.getElementById("grade-learning");if(gl)gl.addEventListener("click",function(){grade(false);});
-  var rb=document.getElementById("restart-btn");if(rb)rb.addEventListener("click",function(){buildQueue();render();});
-  document.querySelectorAll("[data-edit]").forEach(function(el){
-    el.addEventListener("click",function(){openDetailModal(parseInt(el.dataset.edit));});
-  });
-  document.querySelectorAll("[data-del]").forEach(function(el){
-    el.addEventListener("click",function(e){
-      e.stopPropagation();
-      var id=parseInt(el.dataset.del);
-      if(!confirm("Delete this word from Poketto?"))return;
-      vocab=vocab.filter(function(w){return w.id!==id;});
-      delete scores[id];save();render();
-    });
-  });
+  var rb=document.getElementById("restart-btn");if(rb)rb.addEventListener("click",function(){var pool=filterType==="all"?vocab:vocab.filter(function(w){return w.type===filterType;});queue=buildRecallQueue(pool);qIdx=0;flipped=false;sessionDone=false;sessionKnown=0;sessionLearning=0;render();});
+  // word-row handlers attached by attachWordRowHandlers() after renderWordsList()
   var si=document.getElementById("search-input");
-  if(si)si.addEventListener("input",function(e){
-    var pos=e.target.selectionStart;
-    searchQ=e.target.value;
-    render();
-    var next=document.getElementById("search-input");
-    if(next){next.focus({preventScroll:true});next.setSelectionRange(pos,pos);}
-  });
+  if(si)si.addEventListener("input",function(){renderWordsList();});
   var sc=document.getElementById("search-clear");
-  if(sc)sc.addEventListener("click",function(){searchQ="";render();});
+  if(sc)sc.addEventListener("click",function(){var inp=document.getElementById("search-input");if(inp){inp.value="";inp.focus();}renderWordsList();});
   var ex=document.getElementById("export-btn");if(ex)ex.addEventListener("click",exportBackup);
   var im=document.getElementById("import-btn");if(im)im.addEventListener("click",function(){var file=document.getElementById("import-file");if(file)file.click();});
   var input=document.getElementById("import-file");if(input)input.addEventListener("change",function(e){importBackupFile(e.target.files[0]);e.target.value="";});
@@ -766,7 +1315,7 @@ function attachHandlers(){
   });
   var rd=document.getElementById("restore-defaults-btn");if(rd)rd.addEventListener("click",function(){
     if(!confirm("Replace your current vocabulary with the original starter words?"))return;
-    vocab=JSON.parse(JSON.stringify(DEFAULT_VOCAB));scores={};filterType="all";searchQ="";buildQueue();save();render();
+    vocab=JSON.parse(JSON.stringify(DEFAULT_VOCAB));scores={};filterType="all";searchQ="";var si=document.getElementById("search-input");if(si)si.value="";buildQueue();save();render();
   });
 }
 
@@ -774,7 +1323,8 @@ function attachHandlers(){
 document.querySelectorAll(".nav-btn").forEach(function(btn){
   btn.addEventListener("click",function(){
     activeTab=btn.dataset.tab;
-    if(activeTab==="review")buildQueue();
+    // Only rebuild queue when switching TO review if no session is active
+    if(activeTab==="review"&&(queue.length===0||sessionDone))buildQueue();
     render();
   });
 });
@@ -783,7 +1333,7 @@ document.getElementById("modal-close").addEventListener("click",closeModal);
 document.getElementById("modal-overlay").addEventListener("click",function(e){if(e.target===e.currentTarget)closeModal();});
 
 // ---- INIT ----
-load();buildQueue();render();
+load();save();buildQueue();render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(function(){});
 </script>
 </body>
