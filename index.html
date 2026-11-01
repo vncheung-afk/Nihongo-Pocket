@@ -351,7 +351,19 @@ function uTa(w) {
   return stem + (m[last] || "?");
 }
 
+// These な-adjectives retain their final い in every conjugation.
+// Match exact spellings: endings alone cannot determine an adjective's type.
+function correctAdjectiveType(word, type) {
+  var naAdjectives = ["嫌い", "きらい", "大嫌い", "だいきらい",
+    "綺麗", "奇麗", "きれい", "キレイ",
+    "幸い", "さいわい"];
+  return type === "i-adj" && naAdjectives.indexOf(String(word || "").trim()) >= 0
+    ? "na-adj" : type;
+}
 function conjugate(word, type) {
+  return generateForms(word, correctAdjectiveType(word, type));
+}
+function generateForms(word, type) {
   var f = {};
   if (!word || type === "noun" || type === "expression") return f;
 
@@ -652,13 +664,25 @@ function wordIdFromDataset(raw) {
   return Number(raw);
 }
 function normalizeWord(w, index) {
+  var japanese = String(w.japanese || "").trim();
+  var type = correctAdjectiveType(japanese, TYPE_LABELS[w.type] ? w.type : "noun");
+  var overrides = Object.assign({}, w.overrides && typeof w.overrides === "object" ? w.overrides : {});
+  if (type !== w.type && w.type === "i-adj") {
+    var oldForms = generateForms(japanese, w.type);
+    var newForms = conjugate(japanese, type);
+    Object.keys(overrides).forEach(function(key) {
+      // Discard obsolete form keys and saved copies of the incorrect auto forms.
+      // Preserve custom overrides that still apply to the corrected word type.
+      if (!(key in newForms) || overrides[key] === oldForms[key]) delete overrides[key];
+    });
+  }
   return {
     id: normalizeId(w.id, index),
-    japanese: String(w.japanese || "").trim(),
+    japanese: japanese,
     reading: String(w.reading || "").trim(),
     meaning: String(w.meaning || "").trim(),
-    type: TYPE_LABELS[w.type] ? w.type : "noun",
-    overrides: w.overrides && typeof w.overrides === "object" ? w.overrides : {},
+    type: type,
+    overrides: overrides,
     collocations: Array.isArray(w.collocations) ? w.collocations.map(function(c){return{japanese:String(c.japanese||"").trim(),gloss:String(c.gloss||"").trim()};}).filter(function(c){return c.japanese;}) : []
   };
 }
@@ -991,7 +1015,7 @@ function saveAdd(){
   var meaning=(document.getElementById("a-meaning").value||"").trim();
   if(!jp||!meaning){alert("Japanese and meaning are required.");return;}
   if(vocab.some(function(w){return w.japanese===jp;})){if(!confirm("「"+jp+"」 is already in your vocabulary. Add it again?"))return;}
-  var savedType=addState.type;
+  var savedType=correctAdjectiveType(jp,addState.type);
   vocab.push({id:Date.now(),japanese:jp,reading:reading,meaning:meaning,type:savedType,overrides:{}});
   save();
   addState={japanese:"",reading:"",meaning:"",type:"noun"};
@@ -1124,7 +1148,7 @@ function renderDetailBody(w){
     el.addEventListener("click",function(){
       var w=vocab.find(function(v){return String(v.id)===String(editId);});
       if(w){
-        w.type=el.dataset.etype;
+        w.type=correctAdjectiveType(w.japanese,el.dataset.etype);
         w.overrides={}; // clear overrides when type changes
         renderDetailBody(w);
       }
@@ -1166,10 +1190,14 @@ function saveEdit(){
   // type is already updated by the chip click handler
   if(newJp!==w.japanese){w.japanese=newJp;w.overrides={};}
   else{w.japanese=newJp;}
+  var previousType=w.type;
+  var corrected=normalizeWord(w);
+  w.type=corrected.type;w.overrides=corrected.overrides;
   var autoForms=conjugate(w.japanese,w.type);
   document.querySelectorAll(".fe-inp[data-fk]").forEach(function(inp){
+    if(previousType!==w.type)return;
     var key=inp.dataset.fk,auto=autoForms[key]||"",val=inp.value.trim();
-    if(val&&val!==auto)w.overrides[key]=val;else delete w.overrides[key];
+    if(key in autoForms && val&&val!==auto)w.overrides[key]=val;else delete w.overrides[key];
   });
   // collect collocations
   var newCollocs=[];
@@ -1305,7 +1333,7 @@ document.getElementById("modal-close").addEventListener("click",closeModal);
 document.getElementById("modal-overlay").addEventListener("click",function(e){if(e.target===e.currentTarget)closeModal();});
 
 // ---- INIT ----
-load();buildQueue();render();
+load();save();buildQueue();render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(function(){});
 </script>
 </body>
