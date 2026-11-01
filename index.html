@@ -840,7 +840,15 @@ function correctionMarkup(item,recall,attempt){
 // ---- AUDIO ----
 function getJapanesePlaybackVoices(){
   if(!window.speechSynthesis)return [];
-  return window.speechSynthesis.getVoices().filter(function(v){return /^ja(?:[-_]|$)/i.test(v.lang);});
+  var selected=savedPlaybackVoice(),groups=Object.create(null),order=[];
+  window.speechSynthesis.getVoices().filter(function(v){return /^ja(?:[-_]|$)/i.test(v.lang);}).forEach(function(voice){
+    // iOS may expose multiple voice records with the same displayed speaker name.
+    var name=String(voice.name||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
+    if(!Object.prototype.hasOwnProperty.call(groups,name)){groups[name]=voice;order.push(name);}
+    // Keep the user's chosen variant when collapsing identically named voices.
+    else if((voice.voiceURI||voice.name)===selected)groups[name]=voice;
+  });
+  return order.map(function(name){return groups[name];});
 }
 function savedPlaybackVoice(){try{return localStorage.getItem('poketto_playback_voice')||'';}catch(e){return '';}}
 function playbackVoiceOptions(){
